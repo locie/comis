@@ -7,7 +7,6 @@ partial model HeatingSystem "Partial heating/cooling system"
   parameter Integer nZones(min=1)    "Number of conditioned thermal zones deserved by the system" annotation(Dialog(group= "Settings parameters"));
   parameter Boolean includePipes=false
     "Set to true to include pipes in the basecircuit" annotation(Dialog(group= "Settings parameters"));
-
   // --- Boolean declarations
   parameter Boolean isAHU=false "true if system have an AHU loop";
   parameter Boolean isMulti=false "true if system have multi heatsource";
@@ -176,14 +175,10 @@ partial model HeatingSystem "Partial heating/cooling system"
 </ol></p>
 <p><h4>Model use</h4></p>
 <p><ol>
-<li>Connect the heating system to the corresponding heatPorts of a <a href=\"modelica://IDEAS.Templates.Interfaces.BaseClasses.Structure\">structure</a>. </li>
+<li>Connect the heating system to the corresponding heatPorts. </li>
 <li>Connect <i>TSet</i> and <i>TSensor</i> and <i>plugLoad. </i></li>
-<li>Connect <i>plugLoad </i> to an inhome grid.  A<a href=\"modelica://IDEAS.Templates.Interfaces.BaseClasses.CausalInhomeFeeder\"> dummy inhome grid like this</a> has to be used if no inhome grid is to be modelled. </li>
-<li>Set all parameters that are required, depending on which implementation of this interface is used. </li>
 </ol></p>
 <p><h4>Validation </h4></p>
 <p>No validation performed.</p>
-<p><h4>Example </h4></p>
-<p>See the <a href=\"modelica://IDEAS.Thermal.HeatingSystems.Examples\">heating system examples</a>. </p>
 </html>"));
 end HeatingSystem;
