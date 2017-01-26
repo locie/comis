@@ -1,0 +1,33 @@
+within FBM.Components.BaseClasses;
+block HRefTil "Reflected insulation on a tilted surface"
+ extends Modelica.Blocks.Icons.Block;
+ parameter Real rho=0.2 "Ground reflectance";
+  parameter Modelica.SIunits.Angle til
+                                      "Surface tilt angle";
+
+
+protected
+  Modelica.Blocks.Interfaces.RealInput u
+    annotation (Placement(transformation(extent={{-120,-20},{-80,20}})));
+
+public
+  Modelica.Blocks.Interfaces.RealOutput y
+    annotation (Placement(transformation(extent={{100,-10},{120,10}})));
+  Buildings.BoundaryConditions.WeatherData.Bus weaBus annotation (Placement(
+        transformation(extent={{-106,50},{-66,90}}), iconTransformation(extent={
+            {-86,70},{-66,90}})));
+
+equation
+
+  y=rho*(1-Modelica.Math.cos(til))*u;
+
+  connect(weaBus.HGloHor, u) annotation (Line(
+      points={{-86,70},{-92,70},{-92,0},{-100,0}},
+      color={255,204,51},
+      thickness=0.5), Text(
+      string="%first",
+      index=-1,
+      extent={{-6,3},{-6,3}}));
+  annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
+        coordinateSystem(preserveAspectRatio=false)));
+end HRefTil;

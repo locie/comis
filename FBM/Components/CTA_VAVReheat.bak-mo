@@ -1,0 +1,863 @@
+within FBM.Components;
+model CTA_VAVReheat
+   extends Buildings.Fluid.Interfaces.PartialTwoPortInterface(redeclare
+      replaceable package Medium =
+        Buildings.Media.Water);
+
+   extends FBM.Components.BaseClasses.CTAParameter;
+
+  replaceable package MediumA =
+      Buildings.Media.Air(T_default=293.15) "Medium model for Air";
+  package MediumW = Buildings.Media.Water "Medium model for water";
+
+  Buildings.Fluid.Sources.Outside
+                        amb(redeclare package Medium = MediumA, nPorts=2)
+    "Ambient conditions"
+    annotation (Placement(transformation(extent={{-100,28},{-78,50}})));
+  Buildings.Fluid.FixedResistances.FixedResistanceDpM fil(
+    m_flow_nominal=m_flow_nominal,
+    redeclare package Medium = MediumA,
+    dp_nominal=200 + 200 + 100,
+    from_dp=false,
+    linearized=false) "Filter"
+    annotation (Placement(transformation(extent={{70,-40},{90,-20}})));
+  Buildings.Fluid.HeatExchangers.DryEffectivenessNTU heaCoi(
+    redeclare package Medium1 = MediumA,
+    redeclare package Medium2 = MediumW,
+    allowFlowReversal2=false,
+    configuration=Buildings.Fluid.Types.HeatExchangerConfiguration.CounterFlow,
+    dp1_nominal=0,
+    dp2_nominal=0,
+    m1_flow_nominal=m_flow_nominal_Air,
+    m2_flow_nominal=m_flow_nominal_Air*1000*(10 - (-20))/4200/10,
+    Q_flow_nominal=m_flow_nominal_Air*1006*(16.7 - 8.5),
+    T_a1_nominal=281.65,
+    T_a2_nominal=323.15) "Heating coil"
+    annotation (Placement(transformation(extent={{108,-46},{128,-26}})));
+  Buildings.Fluid.HeatExchangers.WetCoilCounterFlow cooCoi(
+    redeclare package Medium1 = MediumW,
+    redeclare package Medium2 = MediumA,
+    m2_flow_nominal=m_flow_nominal,
+    dp2_nominal=0,
+    dp1_nominal=0,
+    energyDynamics=Modelica.Fluid.Types.Dynamics.FixedInitial,
+    m1_flow_nominal=m_flow_nominal_Air*1000*15/4200/10,
+    UA_nominal=m_flow_nominal_Air*1000*15/
+        Buildings.Fluid.HeatExchangers.BaseClasses.lmtd(
+        T_a1=26.2,
+        T_b1=12.8,
+        T_a2=6,
+        T_b2=16))                                              "Cooling coil"
+    annotation (Placement(transformation(extent={{220,-26},{200,-46}})));
+  Buildings.Fluid.FixedResistances.FixedResistanceDpM dpSupDuc(
+    dh=1,
+    redeclare package Medium = MediumA,
+    dp_nominal=20,
+    m_flow_nominal=m_flow_nominal_Air)
+                   "Pressure drop for supply duct"
+    annotation (Placement(transformation(extent={{330,-40},{350,-20}})));
+  Buildings.Fluid.FixedResistances.FixedResistanceDpM dpRetDuc(
+    use_dh=false,
+    dh=1,
+    redeclare package Medium = MediumA,
+    dp_nominal=20,
+    m_flow_nominal=m_flow_nominal_Air)
+                   "Pressure drop for return duct"
+    annotation (Placement(transformation(extent={{332,120},{312,140}})));
+  Buildings.Fluid.Movers.SpeedControlled_y fanSup(
+    redeclare package Medium = MediumA,
+    tau=60,
+    energyDynamics=Modelica.Fluid.Types.Dynamics.FixedInitial,
+    per(pressure(V_flow={0,m_flow_nominal_Air/1.2*2}, dp={850,0})))
+                                                               "Supply air fan"
+    annotation (Placement(transformation(extent={{234,-40},{254,-20}})));
+  Buildings.Fluid.Movers.SpeedControlled_y fanRet(
+    redeclare package Medium = MediumA,
+    tau=60,
+    energyDynamics=Modelica.Fluid.Types.Dynamics.FixedInitial,
+    per(pressure(V_flow=m_flow_nominal_Air/1.2*{0,2}, dp=1.5*110*{2,0})))
+                                                               "Return air fan"
+    annotation (Placement(transformation(extent={{184,120},{164,140}})));
+  Buildings.Fluid.Sources.FixedBoundary sinCoo(
+    redeclare package Medium = MediumW,
+    nPorts=1,
+    p=300000,
+    T=285.15) "Sink for cooling coil" annotation (Placement(transformation(
+        extent={{-10,-10},{10,10}},
+        rotation=90,
+        origin={200,-110})));
+  Modelica.Blocks.Routing.RealPassThrough TOut(y(
+      final quantity="ThermodynamicTemperature",
+      final unit="K",
+      displayUnit="degC",
+      min=0))
+    annotation (Placement(transformation(extent={{-152,148},{-132,168}})));
+  Buildings.Fluid.Sensors.TemperatureTwoPort TSup(redeclare package Medium =
+        MediumA, m_flow_nominal=m_flow_nominal_Air)
+    annotation (Placement(transformation(extent={{262,-40},{282,-20}})));
+  Modelica.Blocks.Sources.Constant TSupSetHea(k=TSupSetHeat)
+                             "Supply air temperature setpoint for heating"
+    annotation (Placement(transformation(extent={{-90,-108},{-70,-88}})));
+  Buildings.Controls.Continuous.LimPID heaCoiCon(
+    yMax=1,
+    yMin=0,
+    Td=60,
+    initType=Modelica.Blocks.Types.InitPID.InitialState,
+    controllerType=Modelica.Blocks.Types.SimpleController.PI,
+    Ti=600,
+    k=0.01) "Controller for heating coil"
+    annotation (Placement(transformation(extent={{10,-108},{30,-88}})));
+  Buildings.Controls.Continuous.LimPID cooCoiCon(
+    reverseAction=true,
+    Td=60,
+    initType=Modelica.Blocks.Types.InitPID.InitialState,
+    yMax=1,
+    yMin=0,
+    controllerType=Modelica.Blocks.Types.SimpleController.PI,
+    Ti=600,
+    k=0.01) "Controller for cooling coil"
+    annotation (Placement(transformation(extent={{10,-140},{30,-120}})));
+  Buildings.Fluid.Sensors.RelativePressure dpRetFan(
+      redeclare package Medium = MediumA) "Pressure difference over return fan"
+                                            annotation (Placement(
+        transformation(
+        extent={{-10,10},{10,-10}},
+        rotation=90,
+        origin={254,60})));
+  Buildings.Examples.VAVReheat.Controls.FanVFD
+                  conFanSup(xSet_nominal(displayUnit="Pa") = 410, r_N_min=
+        r_N_min)
+    "Controller for fan"
+    annotation (Placement(transformation(extent={{162,24},{182,44}})));
+  Buildings.Fluid.Sensors.VolumeFlowRate senSupFlo(redeclare package Medium =
+        MediumA, m_flow_nominal=m_flow_nominal_Air)
+    "Sensor for supply fan flow rate"
+    annotation (Placement(transformation(extent={{288,-40},{308,-20}})));
+  Buildings.Controls.SetPoints.OccupancySchedule occSch(occupancy=3600*{OccOn,
+        OccOff})
+    "Occupancy schedule"
+    annotation (Placement(transformation(extent={{-194,-36},{-174,-16}})));
+  Buildings.Examples.VAVReheat.Controls.ModeSelector
+                        modeSelector(
+    delTRooOnOff=delTRooOnOff,
+    TRooSetHeaOcc=TRooSetHeaOcc,
+    TRooSetCooOcc=TRooSetCooOcc,
+    TSetHeaCoiOut=TSetHeaCoiOut)
+    annotation (Placement(transformation(extent={{-102,-154},{-82,-134}})));
+  Buildings.Fluid.Sensors.TemperatureTwoPort TCoiHeaOut(redeclare package
+      Medium = MediumA, m_flow_nominal=m_flow_nominal_Air)
+    "Heating coil outlet temperature"
+    annotation (Placement(transformation(extent={{144,-40},{164,-20}})));
+  Buildings.Fluid.Actuators.Valves.TwoWayLinear valCoo(
+    redeclare package Medium = MediumW,
+    CvData=Buildings.Fluid.Types.CvTypes.OpPoint,
+    dpValve_nominal=6000,
+    from_dp=true,
+    dpFixed_nominal=6000,
+    m_flow_nominal=m_flow_nominal_Air*1000*15/4200/10)
+                          "Cooling coil valve"
+                                       annotation (Placement(transformation(
+        extent={{-10,-10},{10,10}},
+        rotation=90,
+        origin={240,-70})));
+  Buildings.Fluid.Sources.FixedBoundary souCoo(
+    nPorts=1,
+    redeclare package Medium = MediumW,
+    p=3E5 + 12000,
+    T=279.15) "Source for cooling coil" annotation (Placement(transformation(
+        extent={{-10,-10},{10,10}},
+        rotation=90,
+        origin={240,-110})));
+  Buildings.Examples.VAVReheat.Controls.Economizer
+                      conEco(
+    dT=1,
+    Ti=600,
+    k=0.1,
+    VOut_flow_min=0.3*m_flow_nominal_Air/1.2)
+           "Controller for economizer"
+    annotation (Placement(transformation(extent={{-60,124},{-40,144}})));
+  Buildings.Fluid.Sensors.TemperatureTwoPort TRet(redeclare package Medium =
+        MediumA, m_flow_nominal=m_flow_nominal_Air)
+                                                "Return air temperature sensor"
+    annotation (Placement(transformation(extent={{110,120},{90,140}})));
+  Buildings.Fluid.Sensors.TemperatureTwoPort TMix(redeclare package Medium =
+        MediumA, m_flow_nominal=m_flow_nominal_Air)
+                                                "Mixed air temperature sensor"
+    annotation (Placement(transformation(extent={{40,-40},{60,-20}})));
+  Buildings.Examples.VAVReheat.Controls.RoomTemperatureSetpoint
+                                   TSetRoo(
+    THeaOn=THeaOn,
+    THeaOff=THeaOff,
+    TCooOn=TCooOn,
+    TCooOff=TCooOff)
+    annotation (Placement(transformation(extent={{-194,-64},{-174,-44}})));
+  Buildings.Fluid.Actuators.Valves.TwoWayLinear valHea(
+    redeclare package Medium = MediumW,
+    CvData=Buildings.Fluid.Types.CvTypes.OpPoint,
+    dpValve_nominal=6000,
+    from_dp=true,
+    dpFixed_nominal=6000,
+    m_flow_nominal=m_flow_nominal_Air*1000*40/4200/10)
+                          "Heating coil valve"
+                                       annotation (Placement(transformation(
+        extent={{-10,-10},{10,10}},
+        rotation=90,
+        origin={140,-70})));
+  Buildings.Fluid.Actuators.Dampers.MixingBox eco(
+    redeclare package Medium = MediumA,
+    dpOut_nominal=10,
+    dpRec_nominal=10,
+    dpExh_nominal=10,
+    mOut_flow_nominal=m_flow_nominal_Air,
+    mRec_flow_nominal=m_flow_nominal_Air,
+    mExh_flow_nominal=m_flow_nominal_Air)
+                      "Economizer"
+    annotation (Placement(transformation(extent={{-32,72},{22,18}})));
+  Buildings.Fluid.Sensors.VolumeFlowRate VOut1(redeclare package Medium =
+        MediumA, m_flow_nominal=m_flow_nominal_Air)
+                                                "Outside air volume flow rate"
+    annotation (Placement(transformation(extent={{-74,18},{-52,40}})));
+  Buildings.Examples.VAVReheat.Controls.DuctStaticPressureSetpoint
+                                      pSetDuc(
+    controllerType=Modelica.Blocks.Types.SimpleController.PI,
+    nin=nReheat,
+    pMin=pMin,
+    pMax=pMax)
+             "Duct static pressure setpoint"
+    annotation (Placement(transformation(extent={{102,24},{122,44}})));
+  Buildings.Examples.VAVReheat.ThermalZones.VAVBranch[nReheat]
+                                                    ReHeater(
+    redeclare package MediumA = MediumA,
+    redeclare package MediumW = MediumW,
+    VRoo={VRoom[i] for i in 1:nReheat},
+    m_flow_nominal={m_flow_room[i] for i in 1:nReheat})
+                                        "Zone for core of buildings (azimuth will be neglected)"
+    annotation (Placement(transformation(extent={{316,12},{384,80}})));
+  Buildings.Examples.VAVReheat.Controls.FanVFD
+                  conFanRet(
+                        xSet_nominal(displayUnit="m3/s") = m_flow_nominal_Air/1.2, r_N_min=
+        r_N_min)        "Controller for fan"
+    annotation (Placement(transformation(extent={{124,150},{144,170}})));
+  Buildings.Fluid.Sensors.VolumeFlowRate senRetFlo(redeclare package Medium =
+        MediumA, m_flow_nominal=m_flow_nominal_Air)
+    "Sensor for return fan flow rate"
+    annotation (Placement(transformation(extent={{308,120},{288,140}})));
+  Buildings.Examples.VAVReheat.Controls.CoolingCoilTemperatureSetpoint
+                                          TSetCoo(TCooOn=TCooOn, TCooOff=
+        TCooOff)                                  "Setpoint for cooling coil"
+    annotation (Placement(transformation(extent={{-40,-140},{-20,-120}})));
+  Buildings.Examples.VAVReheat.Controls.ControlBus
+                      controlBus
+    annotation (Placement(transformation(extent={{-178,176},{-158,196}}),
+        iconTransformation(extent={{-178,176},{-158,196}})));
+  Buildings.BoundaryConditions.WeatherData.Bus weaBus annotation (Placement(
+        transformation(extent={{-208,166},{-168,206}}), iconTransformation(
+          extent={{-542,138},{-522,158}})));
+  Modelica.Blocks.Interfaces.RealInput[nReheat] TRoo(unit="K", displayUnit="degC")
+    "Measured room temperature"
+    annotation (Placement(transformation(extent={{-20,-20},{20,20}},
+        rotation=270,
+        origin={260,222})));
+  Modelica.Fluid.Interfaces.FluidPort_b[nReheat] port_Return(redeclare package
+      Medium = MediumA)
+    annotation (Placement(transformation(extent={{390,120},{410,140}})));
+  Modelica.Fluid.Interfaces.FluidPort_a[nReheat] port_Supply(redeclare package
+      Medium = MediumA)
+    annotation (Placement(transformation(extent={{390,-110},{410,-90}})));
+equation
+  connect(fil.port_b,heaCoi. port_a1) annotation (Line(
+      points={{90,-30},{108,-30}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(TSupSetHea.y,heaCoiCon. u_s) annotation (Line(
+      points={{-69,-98},{8,-98}},
+      color={0,0,127},
+      smooth=Smooth.None));
+  connect(fanRet.port_a,dpRetFan. port_b) annotation (Line(
+      points={{184,130},{254,130},{254,70}},
+      color={0,0,0},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dot));
+  connect(fanSup.port_b,dpRetFan. port_a) annotation (Line(
+      points={{254,-30},{254,50}},
+      color={0,0,0},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dot));
+  connect(senSupFlo.port_b,dpSupDuc. port_a) annotation (Line(
+      points={{308,-30},{330,-30}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(controlBus,modeSelector. cb) annotation (Line(
+      points={{-168,186},{-62,186},{-62,-137.182},{-98.8182,-137.182}},
+      color={255,204,51},
+      thickness=0.5,
+      smooth=Smooth.None), Text(
+      string="%first",
+      index=-1,
+      extent={{-6,3},{-6,3}}));
+  connect(occSch.tNexOcc,controlBus. dTNexOcc) annotation (Line(
+      points={{-173,-20},{-168,-20},{-168,186}},
+      color={0,0,127},
+      smooth=Smooth.None), Text(
+      string="%second",
+      index=1,
+      extent={{6,3},{6,3}}));
+  connect(TOut.y,controlBus. TOut) annotation (Line(
+      points={{-131,158},{-124,158},{-124,186},{-168,186}},
+      color={255,213,170},
+      smooth=Smooth.None,
+      thickness=0.5),      Text(
+      string="%second",
+      index=1,
+      extent={{6,3},{6,3}}));
+  connect(occSch.occupied,controlBus. occupied) annotation (Line(
+      points={{-173,-32},{-168,-32},{-168,186}},
+      color={255,0,255},
+      smooth=Smooth.None), Text(
+      string="%second",
+      index=1,
+      extent={{6,3},{6,3}}));
+  connect(controlBus,conFanSup. controlBus) annotation (Line(
+      points={{-168,186},{156,186},{156,42},{165,42}},
+      color={255,204,51},
+      thickness=0.5,
+      smooth=Smooth.None), Text(
+      string="%first",
+      index=-1,
+      extent={{-6,3},{-6,3}}));
+  connect(valCoo.port_a,souCoo. ports[1]) annotation (Line(
+      points={{240,-80},{240,-100}},
+      color={0,127,0},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(TRet.T,conEco. TRet) annotation (Line(
+      points={{100,141},{100,182},{-72,182},{-72,141.333},{-61.3333,141.333}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(TMix.T,conEco. TMix) annotation (Line(
+      points={{50,-19},{50,178},{-70,178},{-70,137.333},{-61.3333,137.333}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(conEco.TSupHeaSet,TSupSetHea. y) annotation (Line(
+      points={{-61.3333,129.333},{-134,129.333},{-134,-82},{-50,-82},{-50,-98},
+          {-69,-98}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(controlBus,conEco. controlBus) annotation (Line(
+      points={{-168,186},{-168,128},{-62,128},{-62,158},{-64,158},{-64,134.667},
+          {-56,134.667}},
+      color={255,204,51},
+      thickness=0.5,
+      smooth=Smooth.None), Text(
+      string="%first",
+      index=-1,
+      extent={{-6,3},{-6,3}}));
+  connect(TSetRoo.controlBus,controlBus)  annotation (Line(
+      points={{-182,-48},{-168,-48},{-168,186}},
+      color={255,204,51},
+      thickness=0.5,
+      smooth=Smooth.None));
+  connect(TSup.port_a,fanSup. port_b) annotation (Line(
+      points={{262,-30},{254,-30}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(TSup.port_b,senSupFlo. port_a) annotation (Line(
+      points={{282,-30},{288,-30}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(fil.port_a,TMix. port_b) annotation (Line(
+      points={{70,-30},{60,-30}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(conFanSup.y,fanSup. y) annotation (Line(
+      points={{183,34},{243.8,34},{243.8,-18}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(TCoiHeaOut.T,heaCoiCon. u_m) annotation (Line(
+      points={{154,-19},{154,-10},{168,-10},{168,-110},{20,-110}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(heaCoiCon.y,valHea. y) annotation (Line(
+      points={{31,-98},{118,-98},{118,-70},{128,-70}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(valHea.port_b,heaCoi. port_a2) annotation (Line(
+      points={{140,-60},{140,-42},{128,-42}},
+      color={0,127,0},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(cooCoiCon.y,valCoo. y) annotation (Line(
+      points={{31,-130},{220,-130},{220,-70},{228,-70}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(eco.port_Exh,amb. ports[1]) annotation (Line(
+      points={{-32,61.2},{-48,61.2},{-48,41.2},{-78,41.2}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(amb.ports[2],VOut1. port_a) annotation (Line(
+      points={{-78,36.8},{-78,34},{-76,34},{-76,28},{-74,28},{-74,29}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(VOut1.port_b,eco. port_Out) annotation (Line(
+      points={{-52,29},{-52,28.8},{-32,28.8}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(dpRetFan.p_rel,conFanSup. u_m) annotation (Line(
+      points={{245,60},{214,60},{214,8},{172,8},{172,22}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(eco.port_Sup,TMix. port_a) annotation (Line(
+      points={{22,28.8},{36,28.8},{36,-30},{40,-30}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(pSetDuc.y,conFanSup. u) annotation (Line(
+      points={{123,34},{160,34}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(heaCoi.port_b1,TCoiHeaOut. port_a) annotation (Line(
+      points={{128,-30},{144,-30}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(controlBus,conFanRet. controlBus) annotation (Line(
+      points={{-168,186},{100,186},{100,168},{127,168}},
+      color={255,204,51},
+      thickness=0.5,
+      smooth=Smooth.None), Text(
+      string="%first",
+      index=-1,
+      extent={{-6,3},{-6,3}}));
+  connect(senSupFlo.V_flow,conFanRet. u) annotation (Line(
+      points={{298,-19},{298,86},{110,86},{110,160},{122,160}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(senRetFlo.port_b,fanRet. port_a) annotation (Line(
+      points={{288,130},{184,130}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(senRetFlo.V_flow,conFanRet. u_m) annotation (Line(
+      points={{298,141},{298,144},{134,144},{134,148}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(conFanRet.y,fanRet. y) annotation (Line(
+      points={{145,160},{174.2,160},{174.2,142}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(dpRetDuc.port_b,senRetFlo. port_a) annotation (Line(
+      points={{312,130},{308,130}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(TRet.port_b,eco. port_Ret) annotation (Line(
+      points={{90,130},{34,130},{34,61.2},{22,61.2}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(TRet.port_a,fanRet. port_b) annotation (Line(
+      points={{110,130},{164,130}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(TCoiHeaOut.port_b,cooCoi. port_a2) annotation (Line(
+      points={{164,-30},{200,-30}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(valCoo.port_b,cooCoi. port_a1) annotation (Line(
+      points={{240,-60},{240,-42},{220,-42}},
+      color={0,127,0},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(cooCoi.port_b1,sinCoo. ports[1]) annotation (Line(
+      points={{200,-42},{198,-42},{198,-100},{200,-100}},
+      color={0,127,0},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(TSetCoo.TSet,cooCoiCon. u_s) annotation (Line(
+      points={{-19,-130},{8,-130}},
+      color={0,0,0},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(TSetCoo.TSet,conEco. TSupCooSet) annotation (Line(
+      points={{-19,-130},{-10,-130},{-10,-44},{-126,-44},{-126,125.333},{
+          -61.3333,125.333}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(TSupSetHea.y,TSetCoo. TSetHea) annotation (Line(
+      points={{-69,-98},{-50,-98},{-50,-130},{-42,-130}},
+      color={0,0,0},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(modeSelector.cb,TSetCoo. controlBus) annotation (Line(
+      points={{-98.8182,-137.182},{-62,-137.182},{-62,-138},{-31.8,-138}},
+      color={255,204,51},
+      thickness=0.5,
+      smooth=Smooth.None));
+  connect(conEco.VOut_flow,VOut1. V_flow) annotation (Line(
+      points={{-61.3333,133.333},{-64,133.333},{-64,118},{-63,118},{-63,41.1}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(amb.weaBus, weaBus) annotation (Line(
+      points={{-100,39.22},{-188,39.22},{-188,186}},
+      color={255,204,51},
+      thickness=0.5,
+      smooth=Smooth.None));
+  connect(weaBus.TDryBul,pSetDuc. TOut) annotation (Line(
+      points={{-188,186},{92,186},{92,42},{100,42}},
+      color={255,204,51},
+      thickness=0.5,
+      smooth=Smooth.None), Text(
+      string="%first",
+      index=-1,
+      extent={{-6,3},{-6,3}}));
+  connect(TSup.T,cooCoiCon. u_m) annotation (Line(
+      points={{272,-19},{272,-12},{282,-12},{282,-142},{20,-142}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(cooCoi.port_b2,fanSup. port_a) annotation (Line(
+      points={{220,-30},{234,-30}},
+      color={0,127,255},
+      smooth=Smooth.None,
+      thickness=0.5));
+  connect(conEco.yOA,eco. y) annotation (Line(
+      points={{-39.3333,136},{-38,136},{-38,-10},{-5,-10},{-5,12.6}},
+      color={0,0,127},
+      smooth=Smooth.None,
+      pattern=LinePattern.Dash));
+  connect(weaBus.TDryBul, TOut.u) annotation (Line(
+      points={{-188,186},{-168,186},{-168,158},{-154,158}},
+      color={255,204,51},
+      thickness=0.5), Text(
+      string="%first",
+      index=-1,
+      extent={{-6,3},{-6,3}}));
+  connect(valHea.port_a, port_a) annotation (Line(
+      points={{140,-80},{-101,-80},{-101,0},{-100,0}},
+      color={0,127,255},
+      thickness=0.5));
+  connect(heaCoi.port_b2, port_b) annotation (Line(
+      points={{108,-42},{100,-42},{100,0}},
+      color={0,127,255},
+      thickness=0.5));
+     connect(ReHeater.yDam, pSetDuc.u) annotation (Line(points={{386.267,
+          34.6667},{392,34.6667},{392,34},{398,34},{398,110},{74,110},{74,34},{
+          100,34}},
+        color={0,0,127},
+      pattern=LinePattern.Dash));
+  connect(ReHeater.port_b, port_Supply) annotation (Line(points={{350,80},{394,
+          80},{394,-100},{400,-100}},
+                                  color={0,127,255}));
+
+          for i in 1:nReheat loop
+    connect(dpRetDuc.port_a, port_Return[i])
+      annotation (Line(points={{332,130},{400,130}}, color={0,127,255}));
+           connect(controlBus, ReHeater[i].controlBus) annotation (Line(
+      points={{-168,186},{274,186},{274,28.32},{316,28.32}},
+      color={255,204,51},
+      thickness=0.5), Text(
+      string="%first",
+      index=-1,
+      extent={{-6,3},{-6,3}}));
+      connect(dpSupDuc.port_b, ReHeater[i].port_a) annotation (Line(points={{350,-30},
+            {350,28.7733}},         color={0,127,255}));
+
+
+          end for;
+
+  connect(TRoo, ReHeater.TRoo) annotation (Line(points={{260,222},{292,222},{
+          292,57.3333},{311.467,57.3333}},
+                                       color={0,0,127},
+      pattern=LinePattern.Dash));
+  annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-200,
+            -160},{400,220}}), graphics={
+        Rectangle(
+          extent={{-200,220},{400,-160}},
+          lineColor={0,0,127},
+          pattern=LinePattern.Dash,
+          fillColor={85,170,255},
+          fillPattern=FillPattern.Solid),
+        Ellipse(
+          extent={{-194,216},{-140,156}},
+          lineColor={255,220,220},
+          lineThickness=1,
+          fillPattern=FillPattern.Sphere,
+          fillColor={255,255,0}),
+        Line(
+          points={{-168,156},{-168,152},{-168,92},{-80,92}},
+          color={0,0,127},
+          thickness=0.5),
+        Rectangle(
+          extent={{-80,102},{-50,60}},
+          lineColor={0,0,127},
+          lineThickness=0.5,
+          fillColor={135,135,135},
+          fillPattern=FillPattern.Solid),
+        Line(
+          points={{-78,92},{-52,68}},
+          color={255,170,85},
+          thickness=0.5),
+        Line(
+          points={{-52,68},{2,68}},
+          color={255,170,85},
+          thickness=0.5),
+        Rectangle(
+          extent={{2,72},{24,48}},
+          lineColor={0,0,0},
+          lineThickness=0.5,
+          fillColor={135,135,135},
+          fillPattern=FillPattern.Solid),
+        Line(
+          points={{2,50},{22,70},{24,72}},
+          color={0,0,0},
+          thickness=0.5),
+        Line(
+          points={{6,68},{10,68}},
+          color={0,0,0},
+          thickness=0.5),
+        Line(
+          points={{8,66},{8,70}},
+          color={0,0,0},
+          thickness=0.5),
+        Line(
+          points={{24,68},{84,68}},
+          color={255,85,85},
+          thickness=0.5),
+        Ellipse(
+          extent={{84,80},{108,58}},
+          lineColor={0,0,0},
+          lineThickness=0.5,
+          fillColor={85,170,255},
+          fillPattern=FillPattern.Solid),
+        Polygon(
+          points={{88,78},{88,62},{108,70},{88,78}},
+          lineColor={0,0,0},
+          lineThickness=0.5,
+          fillColor={85,170,255},
+          fillPattern=FillPattern.Solid),
+        Line(
+          points={{108,68},{272,68}},
+          color={255,85,85},
+          thickness=0.5),
+        Rectangle(
+          extent={{272,88},{294,64}},
+          lineColor={0,0,0},
+          lineThickness=0.5,
+          fillColor={135,135,135},
+          fillPattern=FillPattern.Solid),
+        Line(
+          points={{272,64},{292,84},{294,86}},
+          color={0,0,0},
+          thickness=0.5),
+        Line(
+          points={{276,82},{276,86}},
+          color={0,0,0},
+          thickness=0.5),
+        Line(
+          points={{274,84},{278,84}},
+          color={0,0,0},
+          thickness=0.5),
+        Line(
+          points={{294,70},{324,70},{324,22}},
+          color={255,0,0},
+          thickness=0.5),
+        Rectangle(
+          extent={{-11,12},{11,-12}},
+          lineColor={0,0,0},
+          lineThickness=0.5,
+          fillColor={135,135,135},
+          fillPattern=FillPattern.Solid,
+          origin={333,12},
+          rotation=90),
+        Line(
+          points={{324,18},{330,12},{326,8},{332,4}},
+          color={0,0,0},
+          thickness=0.5),
+        Line(
+          points={{334,20},{340,14},{336,10},{342,6}},
+          color={0,0,0},
+          thickness=0.5),
+        Line(
+          points={{324,0},{324,-102},{390,-102}},
+          color={255,0,0},
+          thickness=0.5),
+        Line(
+          points={{390,130},{112,130}},
+          color={255,0,0},
+          thickness=0.5),
+        Ellipse(
+          extent={{88,140},{112,118}},
+          lineColor={0,0,0},
+          lineThickness=0.5,
+          fillColor={85,170,255},
+          fillPattern=FillPattern.Solid),
+        Polygon(
+          points={{108,138},{108,122},{88,130},{108,138}},
+          lineColor={0,0,0},
+          lineThickness=0.5,
+          fillColor={85,170,255},
+          fillPattern=FillPattern.Solid),
+        Line(
+          points={{88,130},{-24,130},{-50,96}},
+          color={255,0,0},
+          thickness=0.5),
+        Line(
+          points={{-50,96},{-80,68}},
+          color={255,170,85},
+          thickness=0.5),
+        Line(
+          points={{-80,70},{-182,70},{-182,160}},
+          color={255,170,85},
+          thickness=0.5),
+        Rectangle(
+          extent={{260,104},{364,-14}},
+          lineColor={0,0,0},
+          lineThickness=0.5,
+          pattern=LinePattern.Dash),
+        Text(
+          extent={{260,78},{366,150}},
+          lineColor={0,0,0},
+          pattern=LinePattern.Dash,
+          lineThickness=0.5,
+          textString="VAVBranch * nReheater"),
+        Line(
+          points={{-90,0},{8,0},{8,48},{6,48}},
+          color={255,0,0},
+          thickness=1),
+        Line(
+          points={{8,36},{268,36},{276,36},{276,64}},
+          color={255,0,0},
+          thickness=1),
+        Line(
+          points={{92,0},{18,0},{18,48}},
+          color={0,0,255},
+          thickness=1),
+        Line(
+          points={{18,32},{286,32},{286,64}},
+          color={0,0,255},
+          thickness=1),
+        Rectangle(
+          extent={{208,196},{246,156}},
+          lineColor={0,0,0},
+          fillColor={255,255,255},
+          fillPattern=FillPattern.Solid),
+        Line(
+          points={{260,202},{260,180},{246,180}},
+          color={0,0,0},
+          pattern=LinePattern.Dash),
+        Line(
+          points={{208,176},{182,176},{182,2},{322,2}},
+          color={0,0,0},
+          pattern=LinePattern.Dash),
+        Line(
+          points={{182,80},{274,80}},
+          color={0,0,0},
+          pattern=LinePattern.Dash),
+        Rectangle(
+          extent={{-12,-28},{26,-68}},
+          lineColor={0,0,0},
+          fillColor={255,255,255},
+          fillPattern=FillPattern.Solid),
+        Polygon(
+          points={{-36,12},{-36,-12},{-20,0},{-36,12}},
+          lineColor={0,0,0},
+          lineThickness=0.5,
+          fillColor={175,175,175},
+          fillPattern=FillPattern.Solid),
+        Polygon(
+          points={{-4,12},{-4,-12},{-20,0},{-4,12}},
+          lineColor={0,0,0},
+          lineThickness=0.5,
+          fillColor={175,175,175},
+          fillPattern=FillPattern.Solid),
+        Line(
+          points={{30,68},{30,-40},{26,-40}},
+          color={0,0,0},
+          pattern=LinePattern.Dash),
+        Line(
+          points={{-12,-50},{-24,-50},{-24,-4}},
+          color={0,0,0},
+          pattern=LinePattern.Dash),
+        Rectangle(
+          extent={{128,114},{154,90}},
+          lineColor={0,0,0},
+          fillColor={255,255,255},
+          fillPattern=FillPattern.Solid),
+        Line(
+          points={{142,130},{142,114},{142,114}},
+          color={0,0,0},
+          pattern=LinePattern.Dash),
+        Line(
+          points={{142,90},{142,70}},
+          color={0,0,0},
+          pattern=LinePattern.Dash),
+        Line(
+          points={{128,102},{100,102},{100,116}},
+          color={0,0,0},
+          pattern=LinePattern.Dash),
+        Line(
+          points={{100,80},{100,102}},
+          color={0,0,0},
+          pattern=LinePattern.Dash),
+        Text(
+          extent={{266,214},{324,176}},
+          lineColor={0,0,0},
+          pattern=LinePattern.Dash,
+          fillColor={85,170,255},
+          fillPattern=FillPattern.Solid,
+          textString="TRoom"),
+        Rectangle(
+          extent={{38,72},{60,48}},
+          lineColor={0,0,0},
+          lineThickness=0.5,
+          fillColor={135,135,135},
+          fillPattern=FillPattern.Solid),
+        Line(
+          points={{38,48},{58,70},{60,72}},
+          color={0,0,0},
+          thickness=0.5),
+        Line(
+          points={{40,68},{44,68}},
+          color={0,0,0},
+          thickness=0.5)}),
+                          Diagram(coordinateSystem(preserveAspectRatio=false,
+          extent={{-200,-160},{400,220}})),Documentation(info="<html>
+          <p>
+          CTA based on the model <a href=\"modelica://Buildings.Examples.VAVReheat.ClosedLoop\">VAVReheat</a> of the Buldings library
+          </p>
+          <p><h4>Model use</h4></p>
+          <p><ol>
+          <p>Firstly, give to each zone, wich is deserved by the CTA, a number and keep it in mind for the connection to the multi-input/output </p>
+<li>Set the parameter <i>nReheat</i> egal to the number of zone deserved by an individual re-heater.</li>
+<li>Connect <i>TRoo</i>.  </li>
+<li>Connect <i>port_a</i> to the  hot water source and <i>port_b</i> to the hot water sink. </li>
+<li> Connect <i>port_Supply</i> and <i>port_Return</i> to the air volume of each zone
+<li> Set other parameters or let there to the default value <b> Except for VRoom and m_flow_room</b> wich need to be fullfill</li>
+
+</ol></p>
+</html>"));
+end CTA_VAVReheat;
