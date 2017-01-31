@@ -6,7 +6,6 @@ model SolarPannelFieldWithTes
   replaceable package MediumPrim =
       FBM.Media.Glycol20Water80 "Medium 1 in the component"
       annotation (choicesAllMatching = true,Dialog(enable = source == sou.SolarPannelField));
-
   Buildings.Fluid.SolarCollectors.EN12975[ nPar] solCol(
       redeclare each package Medium = MediumPrim,
     each lat=lat,
@@ -92,7 +91,6 @@ model SolarPannelFieldWithTes
     nSeg=nbrNodes,
     T_start=313.15)
     annotation (Placement(transformation(extent={{90,-20},{70,0}})));
-
       Modelica.Thermal.HeatTransfer.Sensors.TemperatureSensor[nbrNodes] TTank
     annotation (Placement(transformation(extent={{62,-26},{52,-16}})));
   Modelica.Blocks.Interfaces.RealInput y "useless entry"
@@ -102,11 +100,8 @@ model SolarPannelFieldWithTes
   Modelica.Blocks.Interaction.Show.RealValue realValue
     annotation (Placement(transformation(extent={{58,-76},{38,-56}})));
 equation
-
   // --- connect the last pannel branch //
-
   for i in 1:nPar loop
-
   connect(weaBus, solCol[i].weaBus) annotation (Line(
       points={{-78,94},{-78,50},{-36,50},{-36,49.6}},
       color={255,204,51},
@@ -121,20 +116,15 @@ equation
   connect(pumpSupply.port_b1, solCol[i].port_a) annotation (Line(
       points={{-10,28},{-50,28},{-50,40},{-36,40}},
       color={0,127,255}));
-
   end for;
-
  if includePipesSol then
-
     connect(pumpSupply.heatPort, heatPort) annotation (Line(
         points={{0,44},{0,98}},
         color={191,0,0},
         smooth=Smooth.Bezier));
     connect(heatPort, pumpSupply1.heatPort)
       annotation (Line(points={{0,98},{63.5,98},{63.5,44}}, color={191,0,0}));
-
  end if;
-
   connect(pumpSupply.port_b2, hex.port_a1) annotation (Line(
       points={{10,40},{18.4,40}},
       color={0,127,255},

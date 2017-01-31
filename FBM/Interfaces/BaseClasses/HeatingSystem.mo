@@ -59,18 +59,6 @@ partial model HeatingSystem "Partial heating/cooling system"
         extent={{-10,-10},{10,10}},
         rotation=90,
         origin={60,-102})));
-  Modelica.Blocks.Interfaces.RealInput[nZones] TSet(
-    final quantity="ThermodynamicTemperature",
-    unit="K",
-    displayUnit="degC",
-    min=0) "Setpoint temperature for the zones" annotation (Placement(
-        transformation(
-        extent={{10,-10},{-10,10}},
-        rotation=90,
-        origin={-40,104}), iconTransformation(
-        extent={{-10,-10},{10,10}},
-        rotation=90,
-        origin={0,-102})));
   // --- fluid
   annotation (
     Icon(coordinateSystem(preserveAspectRatio=false, extent={{-120,-100},{120,

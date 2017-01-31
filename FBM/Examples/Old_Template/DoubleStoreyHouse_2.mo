@@ -10,21 +10,6 @@ package MediumA = Buildings.Media.Air
     "Number of surface that are connected to constructions that are modeled inside the room";
   parameter Integer nSurBou = 1
     "Number of surface that are connected to the room air volume";
-  Buildings.Controls.SetPoints.OccupancySchedule
-                                       occSch(occupancy=3600*{6,19})
-                                              "Occupancy schedule"
-    annotation (Placement(transformation(extent={{60,-50},{80,-30}})));
-  Modelica.Blocks.Sources.Constant TRooNig(k=273.15 + 18)
-    "Room temperature set point at night"
-    annotation (Placement(transformation(extent={{60,-72},{80,-52}})));
-  Modelica.Blocks.Sources.Constant TRooSet(k=273.15 + 21)
-    annotation (Placement(transformation(extent={{60,-20},{80,0}})));
-  Modelica.Blocks.Logical.Switch swi1 "Switch to select set point"
-    annotation (Placement(transformation(extent={{102,-56},{122,-36}})));
-  Modelica.Blocks.Routing.Replicator replicator1(nout=nZones)
-    annotation (Placement(transformation(extent={{-10,-10},{10,10}},
-        rotation=90,
-        origin={136,-20})));
   Buildings.BoundaryConditions.WeatherData.ReaderTMY3 weaDat(filNam=
         "modelica://Buildings/Resources/weatherdata/USA_CA_San.Francisco.Intl.AP.724940_TMY3.mos")
     annotation (Placement(transformation(extent={{-112,110},{-92,130}})));
@@ -206,18 +191,6 @@ package MediumA = Buildings.Media.Air
   parameter Components.BaseClasses.PartiWall matLayPar
     annotation (Placement(transformation(extent={{-76,-74},{-56,-54}})));
 equation
-  connect(occSch.occupied,swi1. u2) annotation (Line(points={{81,-46},{98,-46},
-          {100,-46}},        color={255,0,255}));
-  connect(TRooNig.y,swi1. u3) annotation (Line(points={{81,-62},{100,-62},{100,
-          -54}},    color={0,0,127}));
-  connect(TRooSet.y,swi1. u1) annotation (Line(points={{81,-10},{96,-10},{96,
-          -38},{100,-38}},
-                    color={0,0,127}));
-  connect(swi1.y,replicator1. u)
-    annotation (Line(points={{123,-46},{136,-46},{136,-32}},
-                                                 color={0,0,127}));
-  connect(replicator1.y, heating.TSet) annotation (Line(points={{136,-9},{
-          136,-9},{136,19.8}},           color={0,0,127}));
   connect(uSha.y,replicator. u) annotation (Line(
       points={{-91,98},{-86,98}},
       color={0,0,127},

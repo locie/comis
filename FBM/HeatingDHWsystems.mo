@@ -3,7 +3,6 @@ package HeatingDHWsystems "Fully functional multi-zone heating and DHW systems"
   package ModularProductionSystem
     "Package with modular source of heat production but fix emited production"
     model SingleProduction_Radiator
-
       extends
         FBM.HeatingDHWsystems.Interfaces.Partial_HydraulicHeating_SingleSource(
         QBoiler=sum(QNom),
@@ -583,9 +582,7 @@ package HeatingDHWsystems "Fully functional multi-zone heating and DHW systems"
         heater(redeclare package Medium = Medium, dp_nominal=sum(m_flow_nominal)/
               30,
           Q_flow_nominal=sum(QNom)),
-        pumpSupply_m_flow(measurePower=false),
-        balancingValve(measureSupplyT=true));
-
+        pumpSupply_m_flow(measurePower=false));
       Modelica.Thermal.HeatTransfer.Sources.FixedHeatFlow prescribedHeatFlow[
         nConvPorts](each Q_flow=0)
         annotation (Placement(transformation(extent={{-84,10},{-104,30}})));
@@ -595,7 +592,7 @@ package HeatingDHWsystems "Fully functional multi-zone heating and DHW systems"
     equation
       QHeaSys = -sum(emission.heatPortEmb.Q_flow);
       connect(emission[:].heatPortEmb[1], heatPortEmb[:]) annotation (Line(
-          points={{89,30},{88,30},{88,40},{112,40},{112,-100},{-60,-100}},
+          points={{97,30},{88,30},{88,40},{112,40},{112,-100},{-60,-100}},
           color={191,0,0},
           smooth=Smooth.None));
       connect(prescribedHeatFlow.port, heatPortCon) annotation (Line(
@@ -606,8 +603,6 @@ package HeatingDHWsystems "Fully functional multi-zone heating and DHW systems"
           points={{-102,-20},{-120,-20}},
           color={191,0,0},
           smooth=Smooth.None));
-      connect(balancingValve.Tsup, onOff_Heater.u_m) annotation (Line(points={{
-              -32.4,26.48},{-32.2,26.48},{-32.2,47},{-67,47}}, color={0,0,127}));
       annotation (
         Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-120,-100},{120,
                 100}})),
@@ -852,8 +847,8 @@ package HeatingDHWsystems "Fully functional multi-zone heating and DHW systems"
         annotation (Line(points={{-92,70},{60.4,70}},           color={0,0,127}));
       connect(gain.y, pumpSto.m_flow_in) annotation (Line(points={{78.8,70},{78.8,-68},
               {101.14,-68},{101.14,-70.8}},      color={0,0,127}));
-      connect(heatPortEmb, emission.heatPortEmb[1]) annotation (Line(points={{-60,-100},
-              {-60,-98},{64,-98},{64,42},{82,42},{88,42},{88,30},{89,30}},
+      connect(heatPortEmb, emission.heatPortEmb[1]) annotation (Line(points={{-60,
+              -100},{-60,-98},{64,-98},{64,42},{82,42},{88,42},{88,30},{97,30}},
             color={191,0,0}));
       connect(DHWTank.portHex_b, pumpSto.port_a) annotation (Line(points={{110,-48},
               {110,-48},{110,-78},{108,-78}}, color={0,127,255}));
@@ -959,13 +954,13 @@ package HeatingDHWsystems "Fully functional multi-zone heating and DHW systems"
     equation
       QHeaSys = -sum(emission.heatPortCon.Q_flow) - sum(emission.heatPortRad.Q_flow);
       connect(emission.heatPortCon, heatPortCon) annotation (Line(
-          points={{86,27.2},{86,38},{86,38},{86,38},{-120,38},{-120,20},{-118,
+          points={{94,27.2},{94,38},{86,38},{86,38},{-120,38},{-120,20},{-118,
               20}},
           color={191,0,0},
           smooth=Smooth.None));
       connect(emission.heatPortRad, heatPortRad) annotation (Line(
-          points={{92,27.2},{92,38},{92,38},{92,38},{-120,38},{-120,-20},{-120,
-              -20}},
+          points={{100,27.2},{100,38},{92,38},{92,38},{-120,38},{-120,-20},{
+              -120,-20}},
           color={191,0,0},
           smooth=Smooth.None));
       annotation (
@@ -1064,7 +1059,6 @@ package HeatingDHWsystems "Fully functional multi-zone heating and DHW systems"
         annotation(Dialog(group = "Pipes",
                          enable = includePipes));
      parameter Modelica.SIunits.ThermalConductivity InsuHeatCondu=0.04;
-
        // --- Storage tank and hydraulic circuit connect to its heat exchanger
       Buildings.Fluid.Movers.FlowControlled_m_flow pumpSto(
         redeclare package Medium = Medium,
@@ -1093,7 +1087,6 @@ package HeatingDHWsystems "Fully functional multi-zone heating and DHW systems"
             extent={{-14,-20},{14,20}},
             rotation=0,
             origin={124,-32})));
-
       // --- Domestic Hot Water and it hydraulic circuit
       replaceable FBM.Components.BalancedTap_m_flow dHW(
         TDHWSet=TDHWSet,
@@ -1214,11 +1207,11 @@ package HeatingDHWsystems "Fully functional multi-zone heating and DHW systems"
           color={0,0,127},
           smooth=Smooth.None));
         connect(emission.heatPortCon, heatPortCon) annotation (Line(
-          points={{86,27.2},{86,40},{-120,40},{-120,20},{-118,20}},
+          points={{94,27.2},{94,40},{-120,40},{-120,20},{-118,20}},
           color={191,0,0},
           smooth=Smooth.None));
       connect(emission.heatPortRad, heatPortRad) annotation (Line(
-          points={{92,27.2},{92,40},{-120,40},{-120,-20}},
+          points={{100,27.2},{100,40},{-120,40},{-120,-20}},
           color={191,0,0},
           smooth=Smooth.None));
       connect(prescribedHeatFlow.port, heatPortEmb)
@@ -1611,21 +1604,6 @@ extends Modelica.Icons.Package;
         annotation (Placement(transformation(extent={{104,26},{84,46}})));
       Modelica.Blocks.Sources.RealExpression[nZones] realExpression(each y=11*6*4)
         annotation (Placement(transformation(extent={{150,48},{130,68}})));
-      Buildings.Controls.SetPoints.OccupancySchedule
-                                           occSch(occupancy=3600*{8,19})
-                                                  "Occupancy schedule"
-        annotation (Placement(transformation(extent={{60,-50},{80,-30}})));
-      Modelica.Blocks.Sources.Constant TRooNig(k=273.15 + 18)
-        "Room temperature set point at night"
-        annotation (Placement(transformation(extent={{60,-72},{80,-52}})));
-      Modelica.Blocks.Sources.Constant TRooSet(k=273.15 + 21)
-        annotation (Placement(transformation(extent={{60,-20},{80,0}})));
-      Modelica.Blocks.Logical.Switch swi1 "Switch to select set point"
-        annotation (Placement(transformation(extent={{102,-56},{122,-36}})));
-      Modelica.Blocks.Routing.Replicator replicator1(nout=nZones)
-        annotation (Placement(transformation(extent={{-10,-10},{10,10}},
-            rotation=90,
-            origin={128,-10})));
       Modelica.Blocks.Sources.Constant mFlowDH(k=0)
         "Room temperature set point at night"
         annotation (Placement(transformation(extent={{-10,-10},{10,10}},
@@ -1844,18 +1822,6 @@ extends Modelica.Icons.Package;
           points={{129,58},{76,58},{76,44}},
           color={0,0,127},
           smooth=Smooth.None));
-      connect(occSch.occupied,swi1. u2) annotation (Line(points={{81,-46},{98,-46},
-              {100,-46}},        color={255,0,255}));
-      connect(TRooNig.y,swi1. u3) annotation (Line(points={{81,-62},{100,-62},{100,
-              -54}},    color={0,0,127}));
-      connect(TRooSet.y,swi1. u1) annotation (Line(points={{81,-10},{96,-10},{96,
-              -38},{100,-38}},
-                        color={0,0,127}));
-      connect(swi1.y,replicator1. u)
-        annotation (Line(points={{123,-46},{128,-46},{128,-22}},
-                                                     color={0,0,127}));
-      connect(replicator1.y, heating.TSet) annotation (Line(points={{128,1},{134,1},
-              {134,14},{134,19.82},{133,19.82}},          color={0,0,127}));
       connect(heating.mDHW60C, mFlowDH.y) annotation (Line(points={{142.5,19.82},
               {140,19.82},{140,1},{150,1}},  color={0,0,127}));
       connect(uSha.y,replicator. u) annotation (Line(
@@ -2052,21 +2018,6 @@ extends Modelica.Icons.Package;
         QNom={3000 for i in 1:nZones},
         TRoomNom(displayUnit="K") = {294.15,294.15})
         annotation (Placement(transformation(extent={{114,20},{152,38}})));
-      Buildings.Controls.SetPoints.OccupancySchedule
-                                           occSch(occupancy=3600*{8,19})
-                                                  "Occupancy schedule"
-        annotation (Placement(transformation(extent={{60,-50},{80,-30}})));
-      Modelica.Blocks.Sources.Constant TRooNig(k=273.15 + 16)
-        "Room temperature set point at night"
-        annotation (Placement(transformation(extent={{60,-72},{80,-52}})));
-      Modelica.Blocks.Sources.Constant TRooSet(k=273.15 + 21)
-        annotation (Placement(transformation(extent={{60,-20},{80,0}})));
-      Modelica.Blocks.Logical.Switch swi1 "Switch to select set point"
-        annotation (Placement(transformation(extent={{102,-56},{122,-36}})));
-      Modelica.Blocks.Routing.Replicator replicator1(nout=nZones)
-        annotation (Placement(transformation(extent={{-10,-10},{10,10}},
-            rotation=90,
-            origin={128,-10})));
       Modelica.Blocks.Sources.Constant mFlowDH(k=0)
         "Room temperature set point at night"
         annotation (Placement(transformation(extent={{-10,-10},{10,10}},
@@ -2280,18 +2231,6 @@ extends Modelica.Icons.Package;
       Modelica.Blocks.Interaction.Show.RealValue realValue
         annotation (Placement(transformation(extent={{146,52},{166,72}})));
     equation
-      connect(occSch.occupied,swi1. u2) annotation (Line(points={{81,-46},{98,-46},
-              {100,-46}},        color={255,0,255}));
-      connect(TRooNig.y,swi1. u3) annotation (Line(points={{81,-62},{100,-62},{100,
-              -54}},    color={0,0,127}));
-      connect(TRooSet.y,swi1. u1) annotation (Line(points={{81,-10},{96,-10},{96,
-              -38},{100,-38}},
-                        color={0,0,127}));
-      connect(swi1.y,replicator1. u)
-        annotation (Line(points={{123,-46},{128,-46},{128,-22}},
-                                                     color={0,0,127}));
-      connect(replicator1.y, heating.TSet) annotation (Line(points={{128,1},{134,1},
-              {134,14},{134,19.82},{133,19.82}},          color={0,0,127}));
       connect(heating.mDHW60C, mFlowDH.y) annotation (Line(points={{142.5,19.82},
               {140,19.82},{140,1},{150,1}},  color={0,0,127}));
       connect(uSha.y,replicator. u) annotation (Line(
@@ -2465,21 +2404,6 @@ extends Modelica.Icons.Package;
         "Number of surface that are connected to constructions that are modeled inside the room";
       parameter Integer nSurBou = 1
         "Number of surface that are connected to the room air volume";
-      Buildings.Controls.SetPoints.OccupancySchedule
-                                           occSch(occupancy=3600*{8,19})
-                                                  "Occupancy schedule"
-        annotation (Placement(transformation(extent={{60,-50},{80,-30}})));
-      Modelica.Blocks.Sources.Constant TRooNig(k=273.15 + 16)
-        "Room temperature set point at night"
-        annotation (Placement(transformation(extent={{60,-72},{80,-52}})));
-      Modelica.Blocks.Sources.Constant TRooSet(k=273.15 + 21)
-        annotation (Placement(transformation(extent={{60,-20},{80,0}})));
-      Modelica.Blocks.Logical.Switch swi1 "Switch to select set point"
-        annotation (Placement(transformation(extent={{102,-56},{122,-36}})));
-      Modelica.Blocks.Routing.Replicator replicator1(nout=nZones)
-        annotation (Placement(transformation(extent={{-10,-10},{10,10}},
-            rotation=90,
-            origin={146,-24})));
       Modelica.Blocks.Sources.Constant mFlowDH(k=0)
         "Room temperature set point at night"
         annotation (Placement(transformation(extent={{-10,-10},{10,10}},
@@ -2697,18 +2621,6 @@ extends Modelica.Icons.Package;
         source=FBM.HeatingDHWsystems.Types.HeatSource.GasBoiler)
         annotation (Placement(transformation(extent={{134,18},{174,38}})));
     equation
-      connect(occSch.occupied,swi1. u2) annotation (Line(points={{81,-46},{98,-46},
-              {100,-46}},        color={255,0,255}));
-      connect(TRooNig.y,swi1. u3) annotation (Line(points={{81,-62},{100,-62},{100,
-              -54}},    color={0,0,127}));
-      connect(TRooSet.y,swi1. u1) annotation (Line(points={{81,-10},{96,-10},{96,
-              -38},{100,-38}},
-                        color={0,0,127}));
-      connect(swi1.y,replicator1. u)
-        annotation (Line(points={{123,-46},{146,-46},{146,-36}},
-                                                     color={0,0,127}));
-      connect(replicator1.y, heating.TSet) annotation (Line(points={{146,-13},{
-              154,-13},{154,14},{154,17.8}}, color={0,0,127}));
       connect(heating.mDHW60C, mFlowDH.y) annotation (Line(points={{160,17.8},{
               160,17.8},{160,-65},{162,-65}}, color={0,0,127}));
       connect(uSha.y,replicator. u) annotation (Line(
@@ -2877,21 +2789,6 @@ extends Modelica.Icons.Package;
         "Number of surface that are connected to constructions that are modeled inside the room";
       parameter Integer nSurBou = 1
         "Number of surface that are connected to the room air volume";
-      Buildings.Controls.SetPoints.OccupancySchedule
-                                           occSch(occupancy=3600*{8,19})
-                                                  "Occupancy schedule"
-        annotation (Placement(transformation(extent={{60,-50},{80,-30}})));
-      Modelica.Blocks.Sources.Constant TRooNig(k=273.15 + 18)
-        "Room temperature set point at night"
-        annotation (Placement(transformation(extent={{60,-72},{80,-52}})));
-      Modelica.Blocks.Sources.Constant TRooSet(k=273.15 + 21)
-        annotation (Placement(transformation(extent={{60,-20},{80,0}})));
-      Modelica.Blocks.Logical.Switch swi1 "Switch to select set point"
-        annotation (Placement(transformation(extent={{102,-56},{122,-36}})));
-      Modelica.Blocks.Routing.Replicator replicator1(nout=nZones)
-        annotation (Placement(transformation(extent={{-10,-10},{10,10}},
-            rotation=90,
-            origin={154,-22})));
       Modelica.Blocks.Sources.Constant mFlowDH(k=0)
         "Room temperature set point at night"
         annotation (Placement(transformation(extent={{-10,-10},{10,10}},
@@ -3064,18 +2961,6 @@ extends Modelica.Icons.Package;
             Buildings.HeatTransfer.Data.Shades.Gray())
         annotation (Placement(transformation(extent={{18,-44},{38,-24}})));
     equation
-      connect(occSch.occupied,swi1. u2) annotation (Line(points={{81,-46},{98,-46},
-              {100,-46}},        color={255,0,255}));
-      connect(TRooNig.y,swi1. u3) annotation (Line(points={{81,-62},{100,-62},{100,
-              -54}},    color={0,0,127}));
-      connect(TRooSet.y,swi1. u1) annotation (Line(points={{81,-10},{96,-10},{96,
-              -38},{100,-38}},
-                        color={0,0,127}));
-      connect(swi1.y,replicator1. u)
-        annotation (Line(points={{123,-46},{154,-46},{154,-34}},
-                                                     color={0,0,127}));
-      connect(replicator1.y, heating.TSet) annotation (Line(points={{154,-11},{
-              154,-11},{154,14},{154,17.8}}, color={0,0,127}));
       connect(heating.mDHW60C, mFlowDH.y) annotation (Line(points={{164,17.8},{
               160,17.8},{160,-65},{162,-65}}, color={0,0,127}));
       connect(uSha.y,replicator. u) annotation (Line(
@@ -3186,21 +3071,6 @@ First Implementation
         "Number of surface that are connected to constructions that are modeled inside the room";
       parameter Integer nSurBou = 1
         "Number of surface that are connected to the room air volume";
-      Buildings.Controls.SetPoints.OccupancySchedule
-                                           occSch(occupancy=3600*{8,19})
-                                                  "Occupancy schedule"
-        annotation (Placement(transformation(extent={{60,-50},{80,-30}})));
-      Modelica.Blocks.Sources.Constant TRooNig(k=273.15 + 18)
-        "Room temperature set point at night"
-        annotation (Placement(transformation(extent={{60,-72},{80,-52}})));
-      Modelica.Blocks.Sources.Constant TRooSet(k=273.15 + 21)
-        annotation (Placement(transformation(extent={{60,-20},{80,0}})));
-      Modelica.Blocks.Logical.Switch swi1 "Switch to select set point"
-        annotation (Placement(transformation(extent={{102,-56},{122,-36}})));
-      Modelica.Blocks.Routing.Replicator replicator1(nout=nZones)
-        annotation (Placement(transformation(extent={{-10,-10},{10,10}},
-            rotation=90,
-            origin={136,-20})));
       Buildings.BoundaryConditions.WeatherData.ReaderTMY3 weaDat(filNam=
             "modelica://Buildings/Resources/weatherdata/USA_CA_San.Francisco.Intl.AP.724940_TMY3.mos")
         annotation (Placement(transformation(extent={{-112,110},{-92,130}})));
@@ -3377,18 +3247,6 @@ First Implementation
             rotation=90,
             origin={142,-58})));
     equation
-      connect(occSch.occupied,swi1. u2) annotation (Line(points={{81,-46},{98,-46},
-              {100,-46}},        color={255,0,255}));
-      connect(TRooNig.y,swi1. u3) annotation (Line(points={{81,-62},{100,-62},{100,
-              -54}},    color={0,0,127}));
-      connect(TRooSet.y,swi1. u1) annotation (Line(points={{81,-10},{96,-10},{96,
-              -38},{100,-38}},
-                        color={0,0,127}));
-      connect(swi1.y,replicator1. u)
-        annotation (Line(points={{123,-46},{136,-46},{136,-32}},
-                                                     color={0,0,127}));
-      connect(replicator1.y, heating.TSet) annotation (Line(points={{136,-9},{
-              136,-9},{136,19.8}},           color={0,0,127}));
       connect(uSha.y,replicator. u) annotation (Line(
           points={{-91,98},{-86,98}},
           color={0,0,127},
@@ -5424,7 +5282,6 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
       replaceable package Medium = Buildings.Media.Water;
       extends FBM.HeatingDHWsystems.BaseClasses.AHU_Heating_parameters;
       extends FBM.Controls.ControlHeating.Interfaces.ControlPara;
-
       extends FBM.Interfaces.BaseClasses.HeatingSystem(
         includePipes = true,
         isHea = true,
@@ -5434,11 +5291,20 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
         nTemSen = nZones,
         nEmbPorts=0,
         nZones=1);
+
+        // --- Parameter : SetPoint Heating
+
+       parameter Modelica.SIunits.Temperature[nZones] T_SetPoint_Day= {294.15 for i in 1:
+          nZones} "Set point temperature for room by day";
+       parameter Modelica.SIunits.Temperature[nZones] T_SetPoint_night= {291.15 for i in 1:
+          nZones}
+                 "Set point temperature for room by night";
+
+
+
       // --- Parameter: General parameters for the design (nominal) conditions and heat curve
       parameter Modelica.SIunits.Power[nZones] QNom(each min=0) = ones(nZones)*5000
         "Nominal power, can be seen as the max power of the emission system per zone";
-
-
       parameter Modelica.SIunits.Temperature[nZones] TRoomNom={294.15 for i in 1:
           nZones} "Nominal room temperature";
       final parameter Modelica.SIunits.MassFlowRate[nZones] m_flow_nominal = QNom/(4180.6*dTSupRetNom)
@@ -5486,7 +5352,6 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
       parameter Modelica.SIunits.Density rhoStdSupply=Medium.density_pTX(101325, 273.15+4, Medium.X_default)
         "Inlet density for which valve coefficients are defined"
       annotation(Dialog(group="Nominal condition", tab="Advanced"));
-
       parameter Real Kv_SISupply(
         min=0,
         fixed= false)
@@ -5501,14 +5366,11 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
         annotation (Placement(transformation(extent={{-10,10},{10,-10}},
             rotation=90,
             origin={-66,12})));
-
       // --- distribution components of hydraulic circuit
-
       ElementaryBlocs.CollectorUnit collectorUnit(redeclare package Medium = Medium,
           m_flow_nominal=sum(m_flow_nominal)) if
                                                 isAHU
         annotation (Placement(transformation(extent={{-20,6},{0,26}})));
-
       Buildings.HeatTransfer.Sources.PrescribedTemperature
         prescribedTemperature annotation (Placement(transformation(
             extent={{-6,-6},{6,6}},
@@ -5538,7 +5400,6 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
       Modelica.Blocks.Sources.Constant TSetAHUOut(k=TAHUSet) if  isAHU == true
         "Temperature setpoint for AHU outlet"
        annotation (Placement(transformation(extent={{34,-60},{20,-46}})));
-
          ElementaryBlocs.MixingCircuit_Tset[nZones] mixingCircuit_Emit(
         redeclare package Medium = Medium,
         each InsuPipeThickness=InsuPipeThickness,
@@ -5558,12 +5419,12 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
         each addPowerToMedium=true,
         each KvReturn=40,
         each dp=dp)
-        annotation (Placement(transformation(extent={{40,0},{62,24}})));
+        annotation (Placement(transformation(extent={{54,0},{76,24}})));
       // --- emission components of hydraulic circuit
       replaceable Buildings.Fluid.HeatExchangers.Radiators.RadiatorEN442_2[
                                                     nZones] emission(
         redeclare each replaceable package Medium = Medium)
-        annotation (Placement(transformation(extent={{74,10},{104,30}})));
+        annotation (Placement(transformation(extent={{82,10},{112,30}})));
       // --- boudaries
       // --- controllers
       replaceable FBM.Controls.ControlHeating.Ctrl_Heating ctrl_Heating(
@@ -5582,25 +5443,39 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
         annotation (Placement(transformation(extent={{-110,62},{-90,82}})));
       Modelica.Blocks.Logical.Hysteresis[nZones] heatingControl(each uLow=-0.5, each
           uHigh=1)        "onoff controller for the pumps of the emission circuits"
-        annotation (Placement(transformation(extent={{-2,68},{18,88}})));
-      Modelica.Blocks.Sources.RealExpression TSet_max(y=max(TSet))
+        annotation (Placement(transformation(extent={{18,36},{38,56}})));
+      Modelica.Blocks.Sources.RealExpression TSet_max(y=max(swi.y))
         "maximum value of set point temperature" annotation (Placement(
             transformation(
             extent={{-21,-10},{21,10}},
             rotation=0,
-            origin={-98,95})));
+            origin={-110,91})));
       Modelica.Blocks.Math.Add add[nZones](            each k2=+1, each k1=-1)
-        annotation (Placement(transformation(extent={{-24,84},{-10,70}})));
+        annotation (Placement(transformation(extent={{-2,54},{12,40}})));
+
+      Modelica.Blocks.Sources.Constant[nZones] TRooNig(k={T_SetPoint_night[i] for i in
+                1:nZones})
+        "Room temperature set point at night"
+        annotation (Placement(transformation(extent={{-38,50},{-28,60}})));
+     Modelica.Blocks.Sources.Constant[nZones] TRooSet(k={T_SetPoint_Day[i] for i in
+                1:nZones})
+        annotation (Placement(transformation(extent={{-38,82},{-28,92}})));
+     Modelica.Blocks.Logical.Switch[nZones] swi "Switch to select set point"
+        annotation (Placement(transformation(extent={{-18,60},{-6,72}})));
+
       // --- Interface
+
       // --- Sensors
       Modelica.Blocks.Math.BooleanToReal booleanToReal[nZones](realTrue=
             m_flow_nominal)
-        annotation (Placement(transformation(extent={{24,68},{44,88}})));
+        annotation (Placement(transformation(extent={{46,36},{66,56}})));
+          Buildings.Controls.SetPoints.OccupancySchedule[ nZones]
+                                           occSch "Occupancy schedule"
+        annotation (Placement(transformation(extent={{-38,68},{-30,76}})));
 
     public
       Controls.ControlHeating.OnOff_Heater onOff_Heater(bandwidth=5)
-        annotation (Placement(transformation(extent={{-78,48},{-58,68}})));
-
+        annotation (Placement(transformation(extent={{-70,36},{-50,56}})));
       Buildings.Fluid.Storage.ExpansionVessel exp(redeclare package Medium = Medium,
           V_start=0.5)
         annotation (Placement(transformation(extent={{-86,-20},{-66,0}})));
@@ -5634,36 +5509,27 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
         // connections that are function of the number of circuits
       for i in 1:nZones loop
           connect(ctrl_Heating.THeaCur, mixingCircuit_Emit[i].TMixedSet) annotation (
-          Line(points={{-90,76},{-30,76},{-30,32},{20,32},{20,26}},
+          Line(points={{-90,76},{-46,76},{-46,32},{20,32},{20,26}},
                                                             color={0,0,127}));
-
                 if includePipes == true then
                connect(prescribedTemperature.port, pumpSupply_m_flow[i].heatPort)
-        annotation (Line(points={{12,-8},{52,-8},{52,0},{51,0}},
+        annotation (Line(points={{12,-8},{52,-8},{52,0},{65,0}},
                                                                color={191,0,0}));
                 end if;
-
-
       end for;
       // general connections for any configuration
       connect(TSet_max.y, ctrl_Heating.TRoo_in1) annotation (Line(
-          points={{-74.9,95},{-74.9,94},{-112,94},{-112,76},{-110,76}},
+          points={{-86.9,91},{-98,91},{-98,76},{-110,76}},
           color={0,0,127},
           smooth=Smooth.None));
       connect(add.y, heatingControl.u) annotation (Line(
-          points={{-9.3,77},{-8,77},{-8,78},{-4,78}},
+          points={{12.7,47},{12,47},{12,46},{16,46}},
           color={0,0,127},
           smooth=Smooth.None));
       connect(TSensor, add.u1) annotation (Line(
-          points={{-124,-60},{-84,-60},{-84,72.8},{-25.4,72.8}},
+          points={{-124,-60},{-40,-60},{-40,42.8},{-3.4,42.8}},
           color={0,0,127},
           smooth=Smooth.None));
-      connect(add.u2, TSet) annotation (Line(
-          points={{-25.4,81.2},{-40,81.2},{-40,104}},
-          color={0,0,127},
-          smooth=Smooth.None));
-      connect(heatingControl.y, booleanToReal.u) annotation (Line(points={{19,78},{22,
-              78}},                     color={255,0,255}));
       connect(weaBus, ctrl_Heating.weaBus) annotation (Line(
           points={{-70,88},{-118,88},{-118,78.2},{-117.6,78.2}},
           color={255,204,51},
@@ -5672,38 +5538,33 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
           index=-1,
           extent={{-6,3},{-6,3}}));
       connect(pumpSupply_m_flow.port_b1, emission.port_a)
-        annotation (Line(points={{62,19.2},{62,20},{74,20}}, color={0,127,255}));
-      connect(pumpSupply_m_flow.port_a2, emission.port_b) annotation (Line(points={{62,4.8},
-              {104,4.8},{104,20}},                color={0,127,255}));
-      connect(booleanToReal.y, pumpSupply_m_flow.u) annotation (Line(points={{45,78},
-              {51,78},{51,24.96}},         color={0,0,127}));
+        annotation (Line(points={{76,19.2},{76,20},{82,20}}, color={0,127,255}));
+      connect(pumpSupply_m_flow.port_a2, emission.port_b) annotation (Line(points={{76,4.8},
+              {112,4.8},{112,20}},                color={0,127,255}));
+      connect(booleanToReal.y, pumpSupply_m_flow.u) annotation (Line(points={{67,46},
+              {65,46},{65,24.96}},         color={0,0,127}));
       connect(ctrl_Heating.THeaterSet, onOff_Heater.reference) annotation (Line(
-            points={{-91,73},{-86,73},{-86,58},{-78.8,58}},       color={0,0,
+            points={{-91,73},{-86,73},{-86,46},{-70.8,46}},       color={0,0,
               127}));
         connect(prescribedTemperature.port, heater.heatPort) annotation (Line(
             points={{12,-8},{12,-8},{-40,-8},{-40,2},{-52,2},{-52,12},{-58.8,12}},
                                                              color={191,0,0}));
        connect(prescribedTemperature.T, ave.y) annotation (Line(points={{12,-21.2},{
               12,-21.2},{12,-22},{4,-22},{4,-21},{-19.3,-21}},  color={0,0,127}));
-      connect(TSensor, ave.u) annotation (Line(points={{-124,-60},{-83,-60},{-83,-21},
+      connect(TSensor, ave.u) annotation (Line(points={{-124,-60},{-41,-60},{-41,-21},
               {-35.4,-21}}, color={0,0,127}));
-
       if isAHU == true then
      for i in 1:nZones loop
          connect(collectorUnit.port_b1, mixingCircuit_Emit[i].port_a1)
         annotation (Line(points={{0,22},{10,22},{10,21.2}}, color={0,127,255}));
           connect(collectorUnit.port_a2, mixingCircuit_Emit[i].port_b2) annotation (
           Line(points={{0,10},{6,10},{6,6.8},{10,6.8}}, color={0,127,255}));
-
      end for;
-
       connect(collectorUnit.port_b3, mixingCircuit_AHU.port_a1)
         annotation (Line(points={{-16,26},{-6,26},{-6,-44}},
                                                            color={0,127,255}));
       connect(collectorUnit.port_a3, mixingCircuit_AHU.port_b2) annotation (Line(
             points={{-4,5.6},{-18,5.6},{-18,-44}},        color={0,127,255}));
-
-
       connect(mixingCircuit_AHU.port_b1, port_a) annotation (Line(points={{-6,-64},{
                 4,-64},{4,-100},{16,-100}},
                                         color={0,127,255}));
@@ -5712,32 +5573,36 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
                                              color={0,127,255}));
       connect(mixingCircuit_AHU.TMixedSet, TSetAHUOut.y) annotation (Line(points={{-2,-54},
                 {19.3,-54},{19.3,-53}},                                                                           color={0,0,127}));
-
       else
         for i in 1:nZones loop
-
         end for;
-
          end if;
-
       if includePipes == true then
-
       end if;
       connect(exp.port_a, heater.port_a)
         annotation (Line(points={{-76,-20},{-66,-20},{-66,2}}, color={0,127,255}));
-
       connect(mixingCircuit_Emit.port_b1, pumpSupply_m_flow.port_a1) annotation (
-          Line(points={{30,21.2},{36,21.2},{36,19.2},{40,19.2}}, color={0,127,255}));
+          Line(points={{30,21.2},{36,21.2},{36,19.2},{54,19.2}}, color={0,127,255}));
       connect(mixingCircuit_Emit.port_a2, pumpSupply_m_flow.port_b2) annotation (
-          Line(points={{30,6.8},{36,6.8},{36,4.8},{40,4.8}}, color={0,127,255}));
-      connect(onOff_Heater.y, heater.y) annotation (Line(points={{-57.2,58},{
-              -48,58},{-42,58},{-42,-6},{-58,-6},{-58,0}}, color={0,0,127}));
-      connect(onOff_Heater.u_m, heater.T) annotation (Line(points={{-67,47},{
-              -67,34.5},{-58,34.5},{-58,23}}, color={0,0,127}));
+          Line(points={{30,6.8},{36,6.8},{36,4.8},{54,4.8}}, color={0,127,255}));
+      connect(onOff_Heater.y, heater.y) annotation (Line(points={{-49.2,46},{-49.2,46},
+              {-44,46},{-44,-4},{-58,-4},{-58,0}},         color={0,0,127}));
+      connect(onOff_Heater.u_m, heater.T) annotation (Line(points={{-59,35},{-59,34.5},
+              {-58,34.5},{-58,23}},           color={0,0,127}));
       connect(heater.port_b, collectorUnit.port_a1) annotation (Line(points={{
               -66,22},{-43,22},{-20,22}}, color={0,127,255}));
       connect(heater.port_a, collectorUnit.port_b2) annotation (Line(points={{
               -66,2},{-66,2},{-66,10},{-20,10}}, color={0,127,255}));
+      connect(TRooNig.y, swi.u3) annotation (Line(points={{-27.5,55},{-19.2,55},{-19.2,
+              61.2}}, color={0,0,127}));
+      connect(heatingControl.y, booleanToReal.u)
+        annotation (Line(points={{39,46},{40,46},{44,46}}, color={255,0,255}));
+      connect(occSch.occupied, swi.u2) annotation (Line(points={{-29.6,69.6},{-24.8,
+              69.6},{-24.8,66},{-19.2,66}}, color={255,0,255}));
+      connect(swi.y, add.u2) annotation (Line(points={{-5.4,66},{-3.4,66},{-3.4,51.2}},
+            color={0,0,127}));
+      connect(TRooSet.y, swi.u1) annotation (Line(points={{-27.5,87},{-27.5,88.5},{-19.2,
+              88.5},{-19.2,70.8}}, color={0,0,127}));
                       annotation(Dialog(group = "Nominal condition"),
                   Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-120,
                 -100},{120,100}})),                   Icon(coordinateSystem(
@@ -5751,8 +5616,6 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
         extends FBM.Components.BaseClasses.SolarParameter;
       extends FBM.Components.BaseClasses.BoilerParameter;
       extends FBM.HeatingDHWsystems.BaseClasses.TES_parameters;
-
-
       extends FBM.Interfaces.BaseClasses.HeatingSystem(
         includePipes = true,
         isHea = true,
@@ -5762,15 +5625,11 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
         nTemSen = nZones,
         nEmbPorts=0,
         nZones=1);
-
      // --- Parameter : Heatsource design
       parameter Integer nSource = 1 annotation(Dialog(group= "Settings"));
       import sou = FBM.HeatingDHWsystems.Types.HeatSource;
       parameter sou source[nSource] "type of heat source"
                                                          annotation(Dialog(group= "Settings"));
-
-
-
       // --- Parameter: General parameters for the design (nominal) conditions and heat curve
       // --- Parameter: General parameters for the design (nominal) conditions and heat curve
       parameter Modelica.SIunits.Power[nZones] QNom(each min=0) = ones(nZones)*5000
@@ -5879,14 +5738,11 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
         annotation (Placement(transformation(extent={{10,10},{-10,-10}},
             rotation=270,
             origin={-94,16})));
-
       // --- distribution components of hydraulic circuit
-
       ElementaryBlocs.CollectorUnit collectorUnit(redeclare package Medium = Medium,
           m_flow_nominal=sum(m_flow_nominal)) if
                                                 isAHU
         annotation (Placement(transformation(extent={{-20,6},{0,26}})));
-
       Buildings.HeatTransfer.Sources.PrescribedTemperature
         prescribedTemperature annotation (Placement(transformation(
             extent={{-6,-6},{6,6}},
@@ -5916,7 +5772,6 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
       Modelica.Blocks.Sources.Constant TSetAHUOut(k=TAHUSet) if  isAHU == true
         "Temperature setpoint for AHU outlet"
        annotation (Placement(transformation(extent={{36,-62},{22,-48}})));
-
          ElementaryBlocs.MixingCircuit_Tset[nZones] mixingCircuit_Emit(
         redeclare package Medium = Medium,
         each InsuPipeThickness=InsuPipeThickness,
@@ -5985,12 +5840,10 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
       Modelica.Blocks.Math.BooleanToReal booleanToReal[nZones](realTrue=
             m_flow_nominal)
         annotation (Placement(transformation(extent={{24,68},{44,88}})));
-
     public
       FBM.Controls.ControlHeating.OnOff_Heater_Multi[nSource] onOff_Heater(bandwidth=
            5)
         annotation (Placement(transformation(extent={{-82,48},{-102,68}})));
-
     public
       Buildings.Fluid.Storage.StratifiedEnhanced TESTank(
         redeclare package Medium = Medium,
@@ -6039,13 +5892,11 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
       for i in 1:nZones loop
           connect(ctrl_Heating.THeaCur, mixingCircuit_Emit[i].TMixedSet) annotation (
           Line(points={{-94,86},{-36,86},{-36,26},{20,26}}, color={0,0,127}));
-
                 if includePipes == true then
                connect(prescribedTemperature.port, pumpSupply_m_flow[i].heatPort)
         annotation (Line(points={{12,-8},{52,-8},{52,0},{51,0}},
                                                                color={191,0,0}));
                 end if;
-
       end for;
       // general connections for any configuration
       connect(TSet_max.y, ctrl_Heating.TRoo_in1) annotation (Line(
@@ -6083,9 +5934,7 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
               12,-21.2},{12,-22},{4,-22},{4,-21},{-19.3,-21}},  color={0,0,127}));
       connect(TSensor, ave.u) annotation (Line(points={{-124,-60},{-77,-60},{-77,-21},
               {-35.4,-21}}, color={0,0,127}));
-
       if isAHU == true then
-
          connect(balancingValve.port_b1, collectorUnit.port_a1) annotation (Line(
             points={{-22,21.2},{-22,21.2},{-22,22},{-20,22}}, color={0,127,255}));
       connect(collectorUnit.port_b1, mixingCircuit_Emit[1].port_a1)
@@ -6098,33 +5947,26 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
         annotation (Line(points={{-16,26},{4,26},{4,-44}}, color={0,127,255}));
       connect(collectorUnit.port_a3, mixingCircuit_AHU.port_b2) annotation (Line(
             points={{-4,5.6},{-6,5.6},{-6,-44},{-8,-44}}, color={0,127,255}));
-
       connect(mixingCircuit_AHU.port_b1, port_a) annotation (Line(points={{4,-64},{4,
               -64},{4,-100},{16,-100}}, color={0,127,255}));
       connect(mixingCircuit_AHU.port_a2, port_b) annotation (Line(points={{-8,-64},{
               -8,-64},{-8,-100},{-14,-100}}, color={0,127,255}));
       connect(mixingCircuit_AHU.TMixedSet, TSetAHUOut.y) annotation (Line(points={{8,-54},{21.3,-54},{21.3,-55}}, color={0,0,127}));
-
       else
         for i in 1:nZones loop
          connect(balancingValve.port_b1, mixingCircuit_Emit[i].port_a1) annotation (
           Line(points={{-22,21.2},{-22,21.2},{10,21.2}},       color={0,127,255}));
-
       connect(balancingValve.port_a2,mixingCircuit_Emit [i].port_b2)
         annotation (Line(points={{-22,6.8},{0,6.8},{0,6},{2,6},{10,6},{10,6.8}},
                                                                  color={0,127,
               255}));
         end for;
-
          end if;
-
       if includePipes == true then
         connect(prescribedTemperature.port, balancingValve.heatPort)
         annotation (Line(points={{12,-8},{12,-8},{-32,-8},{-32,2}},
                                                              color={191,0,0}));
-
       end if;
-
       connect(mixingCircuit_Emit.port_b1, pumpSupply_m_flow.port_a1) annotation (
           Line(points={{30,21.2},{36,21.2},{36,19.2},{40,19.2}}, color={0,127,255}));
       connect(mixingCircuit_Emit.port_a2, pumpSupply_m_flow.port_b2) annotation (
@@ -6148,7 +5990,6 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
             points={{12,-8},{-56,-8},{-56,16},{-55.04,16}}, color={191,0,0}));
       connect(prescribedTemperature.port, TESTank.heaPorTop) annotation (Line(
             points={{12,-8},{-60,-8},{-60,27.84},{-60.8,27.84}}, color={191,0,0}));
-
       for i in 1:nSource loop
         if (source[i] == sou.SolarPannelField) then
       connect(weaBus, heater[i].weaBus) annotation (Line(
@@ -6174,8 +6015,6 @@ Obtained CvData = "     + String(CvDataSupply) + ".");
         connect(ctrl_Heating.THeaterSet, onOff_Heater[i].reference) annotation (
            Line(points={{-95,83},{-95,83.5},{-81,83.5},{-81,65}}, color={0,0,
                 127}));
-
-
       end for;
                        annotation(Dialog(group = "Nominal condition"),
                   Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-120,

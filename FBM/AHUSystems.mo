@@ -65,15 +65,6 @@ package AHUSystems "Collection of systems dedicated to ventilation service"
     Modelica.Blocks.Sources.Constant TSupSetHea(k=TSupSetHeat)
                                "Supply air temperature setpoint for heating"
       annotation (Placement(transformation(extent={{-172,120},{-152,140}})));
-    Buildings.Controls.Continuous.LimPID heaCoiCon(
-      yMax=1,
-      yMin=0,
-      Td=60,
-      initType=Modelica.Blocks.Types.InitPID.InitialState,
-      Ti=600,
-      controllerType=Modelica.Blocks.Types.SimpleController.P,
-      k=0.05) "Controller for heating coil"
-      annotation (Placement(transformation(extent={{-22,-38},{-2,-18}})));
     Buildings.Fluid.Sensors.RelativePressure dpRetFan(
         redeclare package Medium = MediumA) "Pressure difference over return fan"
                                               annotation (Placement(
@@ -81,9 +72,9 @@ package AHUSystems "Collection of systems dedicated to ventilation service"
           extent={{-10,10},{10,-10}},
           rotation=90,
           origin={254,16})));
-    Buildings.Examples.VAVReheat.Controls.FanVFD
-                    conFanSup(xSet_nominal(displayUnit="Pa") = 410, r_N_min=
-          r_N_min,
+    Buildings.Examples.VAVReheat.Controls.FanVFD conFan(
+      xSet_nominal(displayUnit="Pa") = 410,
+      r_N_min=r_N_min,
       controllerType=Modelica.Blocks.Types.SimpleController.P)
       "Controller for fan"
       annotation (Placement(transformation(extent={{182,24},{202,44}})));
@@ -243,16 +234,18 @@ package AHUSystems "Collection of systems dedicated to ventilation service"
       annotation (Placement(transformation(extent={{178,-92},{158,-72}})));
     Modelica.Blocks.Sources.Constant pumHotDeckOff(k=0) "Pump off signal"
       annotation (Placement(transformation(extent={{212,-100},{192,-80}})));
+    Modelica.Blocks.Continuous.LimPID PID(
+      controllerType=Modelica.Blocks.Types.SimpleController.PI,
+      k=0.01,
+      Ti=600,
+      yMax=1,
+      yMin=0) annotation (Placement(transformation(extent={{-20,-14},{0,6}})));
   equation
     connect(fil.port_b,heaCoi. port_a1) annotation (Line(
         points={{90,-30},{108,-30}},
         color={0,127,255},
         smooth=Smooth.None,
         thickness=0.5));
-    connect(TSupSetHea.y,heaCoiCon. u_s) annotation (Line(
-        points={{-151,130},{-36,130},{-36,-28},{-24,-28}},
-        color={0,0,127},
-        pattern=LinePattern.Dash));
     connect(fanRet.port_a,dpRetFan. port_b) annotation (Line(
         points={{184,130},{254,130},{254,26}},
         color={0,0,0},
@@ -300,7 +293,7 @@ package AHUSystems "Collection of systems dedicated to ventilation service"
         string="%second",
         index=1,
         extent={{6,3},{6,3}}));
-    connect(controlBus,conFanSup. controlBus) annotation (Line(
+    connect(controlBus, conFan.controlBus) annotation (Line(
         points={{300,194},{156,194},{156,42},{185,42}},
         color={255,204,51},
         thickness=0.5,
@@ -341,17 +334,8 @@ package AHUSystems "Collection of systems dedicated to ventilation service"
         color={0,127,255},
         smooth=Smooth.None,
         thickness=0.5));
-    connect(conFanSup.y,fanSup. y) annotation (Line(
+    connect(conFan.y, fanSup.y) annotation (Line(
         points={{203,34},{243.8,34},{243.8,-18}},
-        color={0,0,127},
-        smooth=Smooth.None,
-        pattern=LinePattern.Dash));
-    connect(TCoiHeaOut.T,heaCoiCon. u_m) annotation (Line(
-        points={{154,-19},{154,-12},{10,-12},{10,-40},{-12,-40}},
-        color={0,0,127},
-        pattern=LinePattern.Dash));
-    connect(heaCoiCon.y,valHea. y) annotation (Line(
-        points={{-1,-28},{16,-28},{16,-54},{128,-54}},
         color={0,0,127},
         smooth=Smooth.None,
         pattern=LinePattern.Dash));
@@ -375,7 +359,7 @@ package AHUSystems "Collection of systems dedicated to ventilation service"
         color={0,127,255},
         smooth=Smooth.None,
         thickness=0.5));
-    connect(dpRetFan.p_rel,conFanSup. u_m) annotation (Line(
+    connect(dpRetFan.p_rel, conFan.u_m) annotation (Line(
         points={{245,16},{192,16},{192,22}},
         color={0,0,127},
         smooth=Smooth.None,
@@ -385,7 +369,7 @@ package AHUSystems "Collection of systems dedicated to ventilation service"
         color={0,127,255},
         smooth=Smooth.None,
         thickness=0.5));
-    connect(pSetDuc.y,conFanSup. u) annotation (Line(
+    connect(pSetDuc.y, conFan.u) annotation (Line(
         points={{149,34},{180,34}},
         color={0,0,127},
         smooth=Smooth.None,
@@ -582,6 +566,14 @@ package AHUSystems "Collection of systems dedicated to ventilation service"
         pattern=LinePattern.Dash));
     connect(conPum.y, pumHotDeck.y) annotation (Line(
         points={{125,-82},{112,-82},{112,-52},{73.8,-52}},
+        color={0,0,127},
+        pattern=LinePattern.Dash));
+    connect(PID.y, valHea.y) annotation (Line(points={{1,-4},{16,-4},{16,-54},{
+            128,-54}}, color={0,0,127}));
+    connect(TSupSetHea.y, PID.u_s) annotation (Line(points={{-151,130},{-36,130},
+            {-36,-4},{-22,-4}}, color={0,0,127}));
+    connect(PID.u_m, TCoiHeaOut.T) annotation (Line(
+        points={{-10,-16},{-10,-16},{-10,-20},{-10,-19},{72,-19},{154,-19}},
         color={0,0,127},
         pattern=LinePattern.Dash));
     annotation (Icon(coordinateSystem(preserveAspectRatio=false, extent={{-180,
@@ -9501,7 +9493,6 @@ TSimulation maximum = 10453800
     connect(jun.port_2, ReHeater[i].port_a1) annotation (Line(points={{150,-64},
               {394,-64},{394,47.8133},{384.453,47.8133}},
                                                    color={0,127,255}));
-
             end for;
     connect(TRoo, ReHeater.TRoo) annotation (Line(points={{260,222},{292,222},{
             292,57.3333},{311.467,57.3333}},

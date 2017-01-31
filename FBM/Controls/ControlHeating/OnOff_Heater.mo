@@ -17,9 +17,9 @@ public
   Buildings.Controls.Continuous.LimPID conBOI(
     Td=30,
     controllerType=Modelica.Blocks.Types.SimpleController.PI,
-    Ti=1200,
-    k=0.001,
-    initType=Modelica.Blocks.Types.InitPID.InitialState)
+    initType=Modelica.Blocks.Types.InitPID.InitialState,
+    k=0.01,
+    Ti=600)
     annotation (Placement(transformation(extent={{14,-10},{34,10}})));
 equation
   connect(u_m, conBOI.u_m)

@@ -2,7 +2,6 @@ within FBM.Controls.ControlSolar;
 block CTRL_Solar_Prim
   "Primary loop pump controler for sollar installation based on global insulation"
   extends Modelica.Blocks.Icons.Block;
-
    parameter Modelica.SIunits.Angle lat(displayUnit="degree") "Latitude";
   parameter Modelica.SIunits.Angle azi(displayUnit="degree")
     "Surface azimuth (0 for south-facing; -90 degree for east-facing; +90 degree for west facing";
@@ -13,10 +12,8 @@ block CTRL_Solar_Prim
                                                  "Minimum global tilted insulation to turn on the pump";
   parameter Modelica.SIunits.Irradiance HOff = 150
                                                   "Minimum global tilted insulation to turn off the pump";
-
   parameter Modelica.SIunits.Time riseTime=30
     "Rise time of the filter (time to reach 99.6 % of the speed)";
-
   Buildings.BoundaryConditions.SolarIrradiation.DirectTiltedSurface HDirTil(
     til=til,
     lat=lat,

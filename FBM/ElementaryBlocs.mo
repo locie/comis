@@ -242,12 +242,8 @@ This is a model to collect the heat flows from <i>m</i> heatports to one single 
 
   model MixingCircuit_Tset
     "Mixing circuit with outlet temperature setpoint - assuming ideal mixing without pressure simulation"
-
-
     //Extensions
     extends FBM.ElementaryBlocs.Interfaces.PartialCircuitBalancingValve(measureSupplyT=true);
-
-
     Buildings.Fluid.Actuators.Valves.ThreeWayLinear
       thermostatic3WayValve(
       m_flow_nominal=m_flow_nominal,
@@ -255,7 +251,6 @@ This is a model to collect the heat flows from <i>m</i> heatports to one single 
       CvData=Buildings.Fluid.Types.CvTypes.Kv,
       Kv=50)
       annotation (Placement(transformation(extent={{-10,50},{10,70}})));
-
     Modelica.Blocks.Interfaces.RealInput TMixedSet
       "Setpoint for the supply temperature"                                              annotation (Placement(
           transformation(
@@ -271,15 +266,12 @@ This is a model to collect the heat flows from <i>m</i> heatports to one single 
       controllerType=Modelica.Blocks.Types.SimpleController.P,
       yMin=0)   annotation (Placement(transformation(extent={{12,78},{32,98}})));
   equation
-
     if not measureSupplyT then
       connect(thermostatic3WayValve.port_2, port_b1);
     end if;
-
     if not includePipes then
       connect(thermostatic3WayValve.port_1, port_a1);
     end if;
-
     connect(thermostatic3WayValve.port_1, pipeSupply.port_b) annotation (Line(
         points={{-10,60},{-70,60}},
         color={0,127,255},
@@ -367,7 +359,6 @@ This is a model to collect the heat flows from <i>m</i> heatports to one single 
         points={{11,68},{40,68},{40,108}},
         color={0,0,127},
         smooth=Smooth.None));
-
          if booleanInput then
        connect(booleanToReal.y, flowRegulator.m_flow_in)
       annotation (Line(points={{-13,78},{-0.2,78},{-0.2,72}}, color={0,0,127}));
@@ -376,7 +367,6 @@ This is a model to collect the heat flows from <i>m</i> heatports to one single 
          else
            connect(u, flowRegulator.m_flow_in)
       annotation (Line(points={{0,108},{-0.2,108},{-0.2,72}}, color={0,0,127}));
-
          end if;
     annotation (Documentation(info="<html><p>
             This model is the base circuit implementation of a pressure head controlled pump and makes use of <a href=\"modelica://Buildings.Fluid.Movers.FlowControlled_dp\">Buildings.Fluid.Movers.FlowControlled_dp</a>. The flow can be regulated by changing the Kv value of the balancing valve.
@@ -1001,7 +991,6 @@ First implementationn</li>
             extent={{-20,-20},{20,20}},
             rotation=270,
             origin={0,104})));
-
     equation
       if not measureSupplyT then
         connect(partialThreeWayValve.port_2, port_b1);
