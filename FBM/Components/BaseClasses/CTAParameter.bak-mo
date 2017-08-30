@@ -1,0 +1,68 @@
+within FBM.Components.BaseClasses;
+record CTAParameter
+
+
+
+
+    // --- Control-Command parameters
+    parameter Real OccOn(min=1, max=24)= 6 "Hour when the occupancy mode is turn-on for the CTA";
+    parameter Real OccOff(min=1, max=24) = 19 "Hour when the occupancy mode is turn-off for the CTA";
+
+   parameter Modelica.SIunits.Temperature THeaOn=293.15
+    "Heating setpoint during on";
+  parameter Modelica.SIunits.Temperature THeaOff=285.15
+    "Heating setpoint during off";
+  parameter Modelica.SIunits.Temperature TCooOn=297.15
+    "Cooling setpoint during on";
+  parameter Modelica.SIunits.Temperature TCooOff=303.15
+    "Cooling setpoint during off";
+
+  parameter Modelica.SIunits.TemperatureDifference delTRooOnOff(min=0.1)=1
+    "Deadband in room temperature between occupied on and occupied off";
+  parameter Modelica.SIunits.Temperature TRooSetHeaOcc=293.15
+    "Set point for room air temperature during heating mode";
+  parameter Modelica.SIunits.Temperature TRooSetCooOcc=299.15
+    "Set point for room air temperature during cooling mode";
+  parameter Modelica.SIunits.Temperature TSetHeaCoiOut=303.15
+    "Set point for air outlet temperature at central heating coil";
+    parameter Modelica.SIunits.Temperature TSupSetHeat=283.15
+    "Supply air temperature setpoint for heating";
+    parameter Real r_N_min=0.2 "Minimum normalized fan speed";
+      parameter Modelica.SIunits.AbsolutePressure pMin(displayUnit="Pa") = 50
+    "Minimum duct static pressure setpoint";
+  parameter Modelica.SIunits.AbsolutePressure pMax(displayUnit="Pa") = 410
+    "Maximum duct static pressure setpoint";
+
+   // -- Design parameters
+
+
+    parameter Integer nReheat(min=1)
+    "Number of conditioned thermal zones deserved by the system";
+    parameter Modelica.SIunits.Volume[nReheat] VRoom "Zone volume deserved by each reheater";
+    parameter Modelica.SIunits.MassFlowRate[nReheat] m_flow_room "Mass flow rate  deserved by each reheater";
+    parameter Real Tau=0.37 "Ratio of air volume extrated by the CTA";
+
+    // -- Free cooling parameters
+
+       parameter Modelica.SIunits.Temperature TRooCoo = 25+273.15
+    "Set point for mechanical cooling";
+   parameter Modelica.SIunits.Temperature TRooFre = 22+273.15
+    "Maximum temperature above which free cooling is enabled";
+   parameter Modelica.SIunits.Temperature TOutFre = 16+273.15
+    "Outside temperature above which free cooling is allowed";
+   parameter Modelica.SIunits.TemperatureDifference dT = 1
+    "Dead-band for free cooling";
+   parameter Real Kp(min=0) = 1 "Proportional band for mechanical cooling";
+
+protected
+  parameter Modelica.SIunits.MassFlowRate m_flow_nominal_Air = sum(m_flow_room);
+    parameter Modelica.SIunits.Volume VBuilding = sum(VRoom);
+
+
+
+
+
+
+  annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
+        coordinateSystem(preserveAspectRatio=false)));
+end CTAParameter;

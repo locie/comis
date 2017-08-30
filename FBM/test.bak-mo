@@ -1,0 +1,71 @@
+within FBM;
+model test
+    package MediumW = Buildings.Media.Water "Medium model";
+
+  Buildings.Fluid.Sources.FixedBoundary bou(nPorts=1, redeclare package Medium
+      = MediumW)                                      annotation (Placement(
+        transformation(
+        extent={{-10,-10},{10,10}},
+        rotation=270,
+        origin={-16,38})));
+  Buildings.Fluid.Sources.FixedBoundary bou1(
+                                            nPorts=1, redeclare package Medium
+      = MediumW)                                      annotation (Placement(
+        transformation(
+        extent={{-10,-10},{10,10}},
+        rotation=270,
+        origin={36,40})));
+  Buildings.Fluid.FixedResistances.PressureDrop res(
+    redeclare package Medium = MediumW,
+    m_flow_nominal=1,
+    dp_nominal=3000) annotation (Placement(transformation(
+        extent={{-10,-10},{10,10}},
+        rotation=90,
+        origin={-8,0})));
+  Buildings.Fluid.FixedResistances.PressureDrop res1(
+    redeclare package Medium = MediumW,
+    m_flow_nominal=1,
+    dp_nominal=3000) annotation (Placement(transformation(
+        extent={{-10,-10},{10,10}},
+        rotation=90,
+        origin={18,8})));
+  HeatingDHWsystems.SubModel.SolarPannel solarPanel(redeclare package Medium =
+        MediumW,
+    lat(displayUnit="deg") = 0.806999999999,
+    T_a2_nominal=273.15 + 60,
+    VTan=25,
+    hTan=1.9,
+    nPar=6,
+    nSer=78,
+    m_flow_nominal=1,
+    mPrim_flow_nominal=1,
+    dpHexPrim=18400,
+    dpHexSecon=16600)
+    annotation (Placement(transformation(extent={{-2,-44},{18,-24}})));
+  Buildings.HeatTransfer.Sources.FixedTemperature fixedTemperature(T=290.15)
+    annotation (Placement(transformation(extent={{-58,-34},{-38,-14}})));
+  Examples.BaseClasses.Weather
+                      weather
+    annotation (Placement(transformation(extent={{-84,36},{-64,56}})));
+  Modelica.Blocks.Interaction.Show.RealValue realValue
+    annotation (Placement(transformation(extent={{-28,-62},{-48,-42}})));
+equation
+  connect(bou.ports[1], res.port_b) annotation (Line(points={{-16,28},{-16,17},
+          {-8,17},{-8,10}}, color={0,127,255}));
+  connect(res1.port_b, bou1.ports[1])
+    annotation (Line(points={{18,18},{18,30},{36,30}}, color={0,127,255}));
+  connect(res.port_a, solarPanel.port_a) annotation (Line(points={{-8,-10},{-8,
+          -10},{-8,-34},{-2,-34}}, color={0,127,255}));
+  connect(res1.port_a, solarPanel.port_b)
+    annotation (Line(points={{18,-2},{18,-18},{18,-34}}, color={0,127,255}));
+  connect(fixedTemperature.port, solarPanel.heatPort)
+    annotation (Line(points={{-38,-24},{8,-24},{8,-24.2}}, color={191,0,0}));
+  connect(weather.weaBus, solarPanel.weaBus) annotation (Line(
+      points={{-68,51},{-34,51},{-34,-25.8},{0.4,-25.8}},
+      color={255,204,51},
+      thickness=0.5));
+  connect(realValue.numberPort, solarPanel.TBottom) annotation (Line(points={{
+          -26.5,-52},{-16,-52},{-16,-40},{-3,-40}}, color={0,0,127}));
+  annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
+        coordinateSystem(preserveAspectRatio=false)));
+end test;
