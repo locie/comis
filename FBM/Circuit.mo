@@ -32,7 +32,6 @@ package Circuit "Typical kind of distribution circuit"
         package
         Medium = Medium, each includePipes=includePipes,
       m_flow_nominal=m_flow_nominal,
-      each measureSupplyT=false,
       each KvReturn=40)
       annotation (Placement(transformation(extent={{18,-18},{52,18}})));
   protected
@@ -785,4 +784,212 @@ package Circuit "Typical kind of distribution circuit"
             fillPattern=FillPattern.Solid)}),                          Diagram(
           coordinateSystem(preserveAspectRatio=false)));
   end InjectionCircuit;
+
+  model DischargeCircuit
+    "Mixing circuit controlled on the supply mass flow rate. Variable mass flow, constante temperature"
+    parameter Integer nZones(min=1)    "Number of conditioned thermal zones deserved by the system" annotation(Dialog(group= "Settings parameters"));
+    parameter Boolean includePipes=false "Set to true to include pipes in the basecircuit" annotation(Dialog(group= "Settings parameters"));
+
+    parameter Modelica.SIunits.MassFlowRate[nZones] m_flow_nominal( min=0)   "Nominal mass flow rates";
+
+    extends FBM.Controls.ControlHeating.Interfaces.ControlPara;
+    replaceable package Medium=Buildings.Media.Water;
+
+    parameter Modelica.SIunits.Temperature[nZones] T_SetPoint_Day= {294.15 for i in 1:
+        nZones} "Set point temperature for room by day" annotation(Dialog(group= "Heating controler parameters"));
+    parameter Modelica.SIunits.Temperature[nZones] T_SetPoint_night= {291.15 for i in 1:
+        nZones}
+               "Set point temperature for room by night" annotation(Dialog(group= "Heating controler parameters"));
+
+    parameter Real KvV3V = 20;
+
+    FBM.ElementaryBlocs.MixingCircuit_Linear[nZones] mixingCircuit_FlowSet(
+      redeclare package Medium = Medium,
+      m_flow_nominal=m_flow_nominal,
+      each KvReturn=KvV3V,
+      Ti=600,
+      Td=60,
+      useBalancingValve=true,
+      controllerType=Modelica.Blocks.Types.SimpleController.PI,
+      dpValve_nominalSupply=6000,
+      CvDataReturn=Buildings.Fluid.Types.CvTypes.Kv)
+      annotation (Placement(transformation(extent={{46,-22},{12,14}})));
+    ElementaryBlocs.PumpSupply_m_flow[nZones] pumpSupply_m_flow(redeclare
+        package
+        Medium = Medium, each includePipes=includePipes,
+      m_flow_nominal=m_flow_nominal,
+      each measureSupplyT=false,
+      each KvReturn=40,
+      measurePower=false)
+      annotation (Placement(transformation(extent={{-54,-22},{-20,14}})));
+    Modelica.Fluid.Interfaces.FluidPort_a[nZones] port_a2(redeclare package
+        Medium = Medium)
+      annotation (Placement(transformation(extent={{90,-70},{110,-50}})));
+    Modelica.Fluid.Interfaces.FluidPort_b[nZones] port_b1(redeclare package
+        Medium = Medium)
+      annotation (Placement(transformation(extent={{90,50},{110,70}})));
+    Modelica.Fluid.Interfaces.FluidPort_a port_a1(redeclare package Medium =
+          Medium)
+      annotation (Placement(transformation(extent={{-110,50},{-90,70}})));
+    Modelica.Fluid.Interfaces.FluidPort_b port_b2(redeclare package Medium =
+          Medium)
+      annotation (Placement(transformation(extent={{-110,-70},{-90,-50}})));
+    Modelica.Blocks.Interfaces.RealOutput TSupply[nZones](
+      final quantity="ThermodynamicTemperature",
+      unit="K",
+      displayUnit="degC",
+      min=0) "TSupply after mixing" annotation (Placement(transformation(
+          extent={{-10,-10},{10,10}},
+          rotation=90,
+          origin={-20,110}), iconTransformation(
+          extent={{-10,-10},{10,10}},
+          rotation=90,
+          origin={-20,110})));
+  public
+    Buildings.Utilities.Math.Average ave(nin=nZones) if  includePipes
+      "Compute average of room temperatures"
+      annotation (Placement(transformation(extent={{-6,-6},{6,6}},
+          rotation=90,
+          origin={-40,-76})));
+    Buildings.HeatTransfer.Sources.PrescribedTemperature
+      prescribedTemperature if includePipes annotation (Placement(transformation(
+          extent={{-7,-7},{7,7}},
+          rotation=90,
+          origin={-37,-47})));
+    Modelica.Blocks.Interfaces.RealInput[nZones] TSensor(
+      final quantity="ThermodynamicTemperature",
+      unit="K",
+      displayUnit="degC",
+      min=0) "Sensor temperature" annotation (Placement(transformation(
+          extent={{10,-10},{-10,10}},
+          rotation=270,
+          origin={-40,-106})));
+    Modelica.Blocks.Sources.Constant[nZones] TRooNig(k={T_SetPoint_night[i] for i in
+              1:nZones})
+      "Room temperature set point at night"
+      annotation (Placement(transformation(extent={{-70,72},{-60,82}})));
+   Modelica.Blocks.Sources.Constant[nZones] TRooSet(k={T_SetPoint_Day[i] for i in
+              1:nZones})
+      annotation (Placement(transformation(extent={{-78,86},{-68,96}})));
+   Modelica.Blocks.Logical.Switch[nZones] swi "Switch to select set point"
+      annotation (Placement(transformation(extent={{-56,82},{-44,94}})));
+        Buildings.Controls.SetPoints.OccupancySchedule[ nZones]
+                                         occSch "Occupancy schedule"
+      annotation (Placement(transformation(extent={{-64,88},{-60,92}})));
+    Buildings.Controls.Continuous.LimPID[ nZones] conPID(
+      controllerType=Modelica.Blocks.Types.SimpleController.PI,
+      k=0.01,
+      Ti=600)
+      annotation (Placement(transformation(extent={{-36,82},{-24,94}})));
+    Modelica.Blocks.Math.BooleanToReal booleanToReal[nZones](realTrue=
+          m_flow_nominal)
+      annotation (Placement(transformation(extent={{28,84},{40,96}})));
+    Modelica.Blocks.Logical.Hysteresis[nZones] heatingControl(each uLow=-1,
+        each uHigh=1)   "onoff controller for the pumps of the emission circuits"
+      annotation (Placement(transformation(extent={{10,84},{22,96}})));
+  protected
+    Modelica.Blocks.Math.Add add[nZones](each k1=-1, each k2=+1)
+      annotation (Placement(transformation(extent={{-6,84},{6,96}})));
+  equation
+
+    for i in 1:nZones loop
+       connect(port_a1, pumpSupply_m_flow[i].port_a1) annotation (Line(points={{-100,
+            60},{-80,60},{-80,6.8},{-54,6.8}}, color={0,127,255}));
+    connect(port_b2, pumpSupply_m_flow[i].port_b2) annotation (Line(points={{-100,
+            -60},{-80,-60},{-80,-14.8},{-54,-14.8}}, color={0,127,255}));
+
+            if includePipes then
+
+          connect(pumpSupply_m_flow[i].heatPort, prescribedTemperature.port)
+      annotation (Line(points={{-37,-22},{-37,-40}},        color={191,0,0}));
+
+            end if;
+    end for;
+
+    if includePipes then
+      connect(ave.y, prescribedTemperature.T) annotation (Line(points={{-40,-69.4},
+              {-37,-69.4},{-37,-55.4}},
+                                 color={0,0,127}));
+      connect(TSensor, ave.u) annotation (Line(points={{-40,-106},{-40,-106},{-40,
+              -83.2}},    color={0,0,127}));
+
+    end if;
+    connect(mixingCircuit_FlowSet.Tsup, TSupply) annotation (Line(points={{
+            16.08,14.72},{16.08,60},{-20,60},{-20,64},{-20,110}}, color={0,0,
+            127}));
+    connect(pumpSupply_m_flow.port_b1, mixingCircuit_FlowSet.port_b1)
+      annotation (Line(points={{-20,6.8},{12,6.8}}, color={0,127,255}));
+    connect(pumpSupply_m_flow.port_a2, mixingCircuit_FlowSet.port_a2)
+      annotation (Line(points={{-20,-14.8},{12,-14.8}}, color={0,127,255}));
+    connect(mixingCircuit_FlowSet.port_b2, port_a2) annotation (Line(points={{
+            46,-14.8},{64,-14.8},{64,-60},{100,-60}}, color={0,127,255}));
+    connect(TRooNig.y,swi. u3) annotation (Line(points={{-59.5,77},{-57.2,77},{
+            -57.2,83.2}},
+                    color={0,0,127}));
+    connect(occSch.occupied,swi. u2) annotation (Line(points={{-59.8,88.8},{-58,
+            88.8},{-58,88},{-57.2,88}},   color={255,0,255}));
+    connect(TRooSet.y,swi. u1) annotation (Line(points={{-67.5,91},{-67.5,98.5},
+            {-57.2,98.5},{-57.2,92.8}},
+                                 color={0,0,127}));
+    connect(swi.y, conPID.u_s)
+      annotation (Line(points={{-43.4,88},{-37.2,88}}, color={0,0,127}));
+    connect(conPID.y, mixingCircuit_FlowSet.y) annotation (Line(points={{-23.4,
+            88},{29,88},{29,14.72}}, color={0,0,127}));
+    connect(mixingCircuit_FlowSet.port_a1, port_b1) annotation (Line(points={{
+            46,6.8},{66,6.8},{66,60},{100,60}}, color={0,127,255}));
+    connect(TSensor, conPID.u_m) annotation (Line(points={{-40,-106},{-40,-106},
+            {-40,80.8},{-30,80.8}}, color={0,0,127}));
+    connect(heatingControl.y,booleanToReal. u) annotation (Line(points={{22.6,90},
+            {22.6,90},{26.8,90}}, color={255,0,255}));
+    connect(add.y,heatingControl. u)
+      annotation (Line(points={{6.6,90},{6.6,90},{8.8,90}},    color={0,0,127}));
+    connect(swi.y, add.u1) annotation (Line(points={{-43.4,88},{-42,88},{-42,96},
+            {-7.2,96},{-7.2,93.6}}, color={0,0,127}));
+    connect(TSensor, add.u2) annotation (Line(points={{-40,-106},{-40,-106},{
+            -40,86.4},{-7.2,86.4}}, color={0,0,127}));
+    connect(booleanToReal.y, pumpSupply_m_flow.u) annotation (Line(points={{
+            40.6,90},{40,90},{40,38},{-37,38},{-37,15.44}}, color={0,0,127}));
+           annotation (Icon(coordinateSystem(preserveAspectRatio=false), graphics={
+                                     Line(
+            points={{-102,60},{98,60}},
+            color={255,85,85},
+            thickness=0.5),      Line(
+            points={{-102,-60},{98,-60}},
+            color={0,127,255},
+            thickness=0.5),
+          Polygon(
+            points={{-40,70},{-40,50},{-20,60},{-40,70}},
+            lineColor={0,0,127},
+            smooth=Smooth.None,
+            fillColor={0,128,255},
+            fillPattern=FillPattern.Solid),
+          Polygon(
+            points={{0,70},{0,50},{-20,60},{0,70}},
+            lineColor={0,0,127},
+            smooth=Smooth.None,
+            fillColor={255,255,255},
+            fillPattern=FillPattern.Solid),
+          Polygon(
+            points={{-10,10},{-10,-10},{10,0},{-10,10}},
+            lineColor={0,0,127},
+            smooth=Smooth.None,
+            fillColor={0,128,255},
+            fillPattern=FillPattern.Solid,
+            origin={-20,50},
+            rotation=90),
+          Line(
+            points={{-20,40},{-20,0},{0,-40},{40,-60}},
+            color={0,127,255},
+            pattern=LinePattern.Dash),
+          Ellipse(extent={{40,80},{80,40}}, lineColor={0,0,127},
+            fillColor={0,127,255},
+            fillPattern=FillPattern.Solid),
+          Polygon(
+            points={{48,76},{48,44},{80,60},{48,76}},
+            lineColor={0,0,127},
+            smooth=Smooth.None,
+            fillColor={255,255,255},
+            fillPattern=FillPattern.Solid)}),                          Diagram(
+          coordinateSystem(preserveAspectRatio=false)));
+  end DischargeCircuit;
 end Circuit;
