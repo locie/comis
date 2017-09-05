@@ -12,14 +12,14 @@ The COMIS project is found by the <a href="http://www.agence-nationale-recherche
 </p>
 <img src="COSTIC.png" alt="Report front page" style="width: 500px;" align ="middle"/>
 
-# More generic sensors
+# Most generic sensors
 <p align="justify"> The table below give a list of sensors with their used and their accuracy :</p>
 
 <table BORDER="1">
  <CAPTION> Control and Monitoring control </CAPTION>
  <TR>
   <TH> Sensor </TH>
-  <TH> Used </TH>
+  <TH> Use </TH>
   <TH> Accuracy </TH>
  </TR>
 
@@ -96,6 +96,10 @@ The COMIS project is found by the <a href="http://www.agence-nationale-recherche
 </table>
 
 <p align="justify"> The list is mostly partial and don't hesitate to contact me if french langage is a barrier for you. In addition, the accuracy of sensors is given in a raw value but most of the accuracy sensors are relative to a temperature, volume or size, ... To obatain a more precise error formula, please refer to the (COSTIC 2015) report </p>
+
+<p align="justify">
+In order to implement quickly as possible the sensors required for the commissionning phase a database was created. For more details on how to use this tool, you can going on the dedicated section.
+</p>
 
 # Reference :
 
